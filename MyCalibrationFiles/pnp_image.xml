@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<h_flip>0</h_flip>
+<v_flip>0</v_flip>
+<rotate_cam_image>0</rotate_cam_image>
+<show_cv>0</show_cv>
+<image_angle_deg>1.5000000000000000e+00</image_angle_deg>
+<rect_width_mm>5.9000000953674316e+00</rect_width_mm>
+<rect_height_mm>5.9000000953674316e+00</rect_height_mm>
+<image_px_per_mm>8.1999998092651367e+00</image_px_per_mm>
+<show_rect>1</show_rect>
+<fov_x_from>0</fov_x_from>
+<fov_x_to>100</fov_x_to>
+<fov_y_from>0</fov_y_from>
+<fov_y_to>100</fov_y_to>
+</opencv_storage>

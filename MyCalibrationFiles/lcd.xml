@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<tl_cam_idx>1</tl_cam_idx>
+<tl_cam_px_per_mm_x>67.</tl_cam_px_per_mm_x>
+<tl_cam_px_per_mm_y>67.</tl_cam_px_per_mm_y>
+<tr_cam_idx>4</tr_cam_idx>
+<tr_cam_px_per_mm_x>67.</tr_cam_px_per_mm_x>
+<tr_cam_px_per_mm_y>66.</tr_cam_px_per_mm_y>
+<bl_cam_idx>3</bl_cam_idx>
+<bl_cam_px_per_mm_x>66.</bl_cam_px_per_mm_x>
+<bl_cam_px_per_mm_y>66.</bl_cam_px_per_mm_y>
+<br_cam_idx>2</br_cam_idx>
+<br_cam_px_per_mm_x>67.</br_cam_px_per_mm_x>
+<br_cam_px_per_mm_y>65.</br_cam_px_per_mm_y>
+<cur_anchor_pos_tl_cam_x>965.</cur_anchor_pos_tl_cam_x>
+<cur_anchor_pos_tl_cam_y>325.</cur_anchor_pos_tl_cam_y>
+<cur_anchor_pos_tr_cam_x>842.</cur_anchor_pos_tr_cam_x>
+<cur_anchor_pos_tr_cam_y>273.</cur_anchor_pos_tr_cam_y>
+<cur_anchor_pos_bl_cam_x>981.</cur_anchor_pos_bl_cam_x>
+<cur_anchor_pos_bl_cam_y>341.</cur_anchor_pos_bl_cam_y>
+<cur_anchor_pos_br_cam_x>752.</cur_anchor_pos_br_cam_x>
+<cur_anchor_pos_br_cam_y>235.</cur_anchor_pos_br_cam_y>
+<ticks>1779222473</ticks>
+</opencv_storage>

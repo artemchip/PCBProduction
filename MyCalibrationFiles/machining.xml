@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<drilling_rpm>4000</drilling_rpm>
+<z_sink_rate_big_mm_per_min>80</z_sink_rate_big_mm_per_min>
+<z_retract_rate_big_mm_per_min>150</z_retract_rate_big_mm_per_min>
+<z_sink_rate_small_mm_per_min>120</z_sink_rate_small_mm_per_min>
+<z_retract_rate_small_mm_per_min>200</z_retract_rate_small_mm_per_min>
+<z_depth_mm>4.</z_depth_mm>
+<cutting_rpm>6000</cutting_rpm>
+<cutting_rate_mm_per_min>80</cutting_rate_mm_per_min>
+<icutmm>18.</icutmm>
+<igapmm>3.</igapmm>
+</opencv_storage>

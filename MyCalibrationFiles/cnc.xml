@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<x_steps_per_mm>802.4000244140625</x_steps_per_mm>
+<y_steps_per_mm>803.3499755859375</y_steps_per_mm>
+<skew_angle_rad>0.0013000000035390258</skew_angle_rad>
+<h_flip>0</h_flip>
+<v_flip>0</v_flip>
+<rotate_cam_image>0</rotate_cam_image>
+<show_cv>0</show_cv>
+<image_angle_deg>5.</image_angle_deg>
+<rect_width_mm>0.80000001192092896</rect_width_mm>
+<rect_height_mm>0.89999997615814209</rect_height_mm>
+<image_px_per_mm>10.</image_px_per_mm>
+<show_rect>0</show_rect>
+<fov_x_from>0</fov_x_from>
+<fov_x_to>100</fov_x_to>
+<fov_y_from>0</fov_y_from>
+<fov_y_to>100</fov_y_to>
+<cam_to_tool_dist_x>52.15997314453125</cam_to_tool_dist_x>
+<cam_to_tool_dist_y>21.469985961914062</cam_to_tool_dist_y>
+<c_positive_clockwise>0</c_positive_clockwise>
+<steps_per_full_c_turn>-2147483648</steps_per_full_c_turn>
+<c_add_angle>-3.4028234663852886e+38</c_add_angle>
+<machine_ip>""</machine_ip>
+</opencv_storage>

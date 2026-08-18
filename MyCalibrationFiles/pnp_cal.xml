@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<nozzle_rel_mm_x>5.4500000000000000e+01</nozzle_rel_mm_x>
+<nozzle_rel_mm_y>2.8100000381469727e+01</nozzle_rel_mm_y>
+<place_height_mm>7.</place_height_mm>
+<safe_height_mm>20.</safe_height_mm>
+<c_steps_per_seq>3199</c_steps_per_seq>
+<steps_per_c_turn>6398</steps_per_c_turn>
+<c_positive_clockwise>0</c_positive_clockwise>
+<add_angle_deg>2.8000000119209290e-01</add_angle_deg>
+</opencv_storage>
