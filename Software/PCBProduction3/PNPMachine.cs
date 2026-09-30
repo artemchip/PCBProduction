@@ -285,11 +285,61 @@ namespace PCBProduction3
             }
             if (fieldsFilled >= 3)
             {
+                String valpkg = GetPackageContainedIn(ec.value);
+                if (valpkg.Length <= 0)
+                {
+                    // Add Package Specifier
+                    String strpkg = GetPackageContainedIn(str);
+                    if (strpkg.Length > 0)
+                    {
+                        ec.value += "-" + strpkg;
+                    }
+                }
                 return ec;
             }
             else
             {
                 throw new Exception("Не удалось распарсить строку: " + str);
+            }
+        }
+
+        private static String GetPackageContainedIn(String str)
+        {
+            int[] indices = new int[4] { -1, -1, -1, -1 };
+            indices[0] = str.IndexOf("1206");
+            indices[1] = str.IndexOf("0805");
+            indices[2] = str.IndexOf("0603");
+            indices[3] = str.IndexOf("0402");
+            int countOfFound = indices.Count((e) => e >= 0);
+            if (countOfFound == 1)
+            {
+                // Single
+                int idx = indices.First((e) => (e >= 0));
+                return str.Substring(idx, 4);
+            }
+            else if (countOfFound <= 0)
+            {
+                // None
+                return "";
+            }
+            else
+            {
+                // Multiple Different
+                String prevPkg = "";
+                for (int i = 0; i < 4; i++)
+                {
+                    int idx = indices.First((e) => (e >= 0));
+                    String thisPkg =str.Substring(idx, 4);
+                    if (prevPkg.Length > 0)
+                    {
+                        if (thisPkg != prevPkg)
+                        {
+                            throw new Exception("Криво указан корпус компонента: " + str);
+                        }
+                    }
+                    prevPkg = thisPkg;
+                }
+                return prevPkg;
             }
         }
 
@@ -329,6 +379,37 @@ namespace PCBProduction3
             return f1;
         }
 
+        public static String TransformComponentValue(String dsg, String srcValue)
+        {
+            if (dsg.Length <= 0)
+            {
+                return srcValue;
+            }
+            if (!dsg.StartsWith("R") && !dsg.StartsWith("C"))
+            {
+                return srcValue;
+            }
+            String val = "";
+            String pkg_str = GetPackageContainedIn(srcValue);
+            int package_pos = -1;
+            if (pkg_str.Length > 0)
+            {
+                package_pos = srcValue.IndexOf(pkg_str);
+            }
+            for (int i = 0; i < srcValue.Length; i++)
+            {
+                if (Char.IsLetterOrDigit(srcValue[i]) || srcValue[i] == '.' || srcValue[i] == ',' || srcValue[i] == '_' || srcValue[i] == '-')
+                {
+                    val += Char.ToUpper(srcValue[i]);
+                }
+                else if (i > package_pos && package_pos >= 0)
+                {
+                    break;
+                }
+            }
+            return val.Replace("KOHM", "K").Replace("KΩ", "K");
+        }
+
         public String GetGroupFactorFor(BEComponent cmp)
         {
             String dsg = "!";
@@ -336,8 +417,7 @@ namespace PCBProduction3
             {
                 dsg = cmp.designator.Substring(0, 1);
             }
-            String val = cmp.value.ToUpper().Replace("?", "").Replace("?", "").Replace("?", "").Replace("?", "");
-            return dsg + "-" + val;
+            return dsg + "-" + TransformComponentValue(cmp.designator, cmp.value);
         }
 
         public void StartPNPProcess(int componentId, float lyingDeg, bool demoPlaced)

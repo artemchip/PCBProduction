@@ -191,7 +191,7 @@ namespace PCBProduction3
                         lvi.ForeColor = Color.Green;
                     }
                     lvi.SubItems.Add(cmpList[i].designator);
-                    lvi.SubItems.Add(cmpList[i].value);
+                    lvi.SubItems.Add(TransformComponentValue(cmpList[i].designator, cmpList[i].value));
                     lvi.SubItems.Add(cmpList[i].pXMm.ToString("0.00"));
                     lvi.SubItems.Add(cmpList[i].pYMm.ToString("0.00"));
                     lvi.SubItems.Add(cmpList[i].angle.ToString("0"));
