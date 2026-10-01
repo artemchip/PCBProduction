@@ -113,6 +113,7 @@
             btnElectroplating.TabIndex = 8;
             btnElectroplating.Text = "Металлизация переходных отверстий";
             btnElectroplating.UseVisualStyleBackColor = true;
+            btnElectroplating.Click += btnElectroplating_Click;
             // 
             // MainForm
             // 

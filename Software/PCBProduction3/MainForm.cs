@@ -1,4 +1,5 @@
-﻿using System.Windows.Forms;
+﻿using PCBProduction3;
+using System.Windows.Forms;
 
 namespace PCBProduction3
 {
@@ -18,6 +19,8 @@ namespace PCBProduction3
         private PNPForm? pnpForm;
         private QCForm? qcForm;
         private ExposureForm? exposureForm;
+
+        private GalvForm? galvForm;
 
         public MainForm()
         {
@@ -64,6 +67,13 @@ namespace PCBProduction3
             exposureForm = new ExposureForm();
             exposureForm?.ShowDialog();
             exposureForm?.Dispose();
+        }
+
+        private void btnElectroplating_Click(object sender, EventArgs e)
+        {
+            galvForm = new GalvForm();
+            galvForm?.ShowDialog();
+            galvForm?.Dispose();
         }
     }
 }
