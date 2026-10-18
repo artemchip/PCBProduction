@@ -44,6 +44,7 @@
             btnCloseWin = new RedButton();
             mainGroupBox = new RedGroupBox();
             imgSaveDialog = new SaveFileDialog();
+            btnSave = new RedButton();
             ((System.ComponentModel.ISupportInitialize)pbPreview).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nudRenderDpi).BeginInit();
             gbControls.SuspendLayout();
@@ -97,6 +98,7 @@
             // 
             // gbControls
             // 
+            gbControls.Controls.Add(btnSave);
             gbControls.Controls.Add(btnExpose);
             gbControls.Controls.Add(lblWhiteCount);
             gbControls.Controls.Add(tbBottomText);
@@ -122,7 +124,7 @@
             btnExpose.ForeColor = Color.Red;
             btnExpose.Location = new Point(5, 569);
             btnExpose.Name = "btnExpose";
-            btnExpose.Size = new Size(256, 23);
+            btnExpose.Size = new Size(121, 23);
             btnExpose.TabIndex = 21;
             btnExpose.Text = "Засветить...";
             btnExpose.UseVisualStyleBackColor = true;
@@ -152,7 +154,7 @@
             lblBotText.AutoSize = true;
             lblBotText.Location = new Point(5, 496);
             lblBotText.Name = "lblBotText";
-            lblBotText.Size = new Size(91, 15);
+            lblBotText.Size = new Size(88, 15);
             lblBotText.TabIndex = 12;
             lblBotText.Text = "Текст BOTTOM:";
             // 
@@ -161,7 +163,7 @@
             lblTopText.AutoSize = true;
             lblTopText.Location = new Point(5, 440);
             lblTopText.Name = "lblTopText";
-            lblTopText.Size = new Size(65, 15);
+            lblTopText.Size = new Size(63, 15);
             lblTopText.TabIndex = 11;
             lblTopText.Text = "Текст TOP:";
             // 
@@ -225,6 +227,19 @@
             imgSaveDialog.RestoreDirectory = true;
             imgSaveDialog.Title = "Сохранить фотошаблон";
             // 
+            // btnSave
+            // 
+            btnSave.BackColor = Color.Black;
+            btnSave.FlatStyle = FlatStyle.Flat;
+            btnSave.ForeColor = Color.Red;
+            btnSave.Location = new Point(132, 568);
+            btnSave.Name = "btnSave";
+            btnSave.Size = new Size(121, 23);
+            btnSave.TabIndex = 22;
+            btnSave.Text = "Сохранить...";
+            btnSave.UseVisualStyleBackColor = true;
+            btnSave.Click += btnSave_Click;
+            // 
             // ExposureForm
             // 
             AutoScaleDimensions = new SizeF(96F, 96F);
@@ -266,5 +281,6 @@
         private Label lblWhiteCount;
         private SaveFileDialog imgSaveDialog;
         private RedButton btnExpose;
+        private RedButton btnSave;
     }
 }

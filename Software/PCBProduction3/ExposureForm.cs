@@ -219,5 +219,14 @@ namespace PCBProduction3
         {
             pbPreview.Image?.Dispose();
         }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            imgSaveDialog.FileName = "";
+            if (imgSaveDialog.ShowDialog() == DialogResult.OK)
+            {
+                pbPreview.Image?.Save(imgSaveDialog.FileName);
+            }
+        }
     }
 }
