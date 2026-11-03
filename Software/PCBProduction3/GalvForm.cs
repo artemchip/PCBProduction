@@ -219,11 +219,11 @@ namespace PCBProduction3
                 }
             } else
             {
-                int cycleCount = (int)((float)secondCount * 2.5f);
+                int cycleCount = (int)((float)secondCount * 1.6f);
                 for (int i = 0; i < cycleCount; i++)
                 {
-                    gcodeLines.Add("G0 Z5");
-                    gcodeLines.Add("G0 Z-5");
+                    gcodeLines.Add("G0 Z8");
+                    gcodeLines.Add("G0 Z-8");
                 }
             }
             gcodeSaveDialog.Reset();

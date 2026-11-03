@@ -346,7 +346,8 @@ namespace PCBProduction3
                                     false,
                                     (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (cxInFileUnits * 25.4f) : cxInFileUnits),
                                     (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (cyInFileUnits * 25.4f) : cyInFileUnits),
-                                    (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (diameterInFileUnits * 25.4f) : diameterInFileUnits)
+                                    (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (diameterInFileUnits * 25.4f) : diameterInFileUnits),
+                                    false
                                 );
                                 float untentDiameterMm = Math.Max(curHole.diameterMm * 1.1f, curHole.diameterMm + 0.3f);
                                 gd.FillEllipse(Brushes.White, new RectangleF((curHole.holeCenterMmX - (untentDiameterMm * 0.5f)) * inkPrinterDpmm * 2f, (curHole.holeCenterMmY - (untentDiameterMm * 0.5f)) * inkPrinterDpmm * 2f, untentDiameterMm * inkPrinterDpmm * 2f, untentDiameterMm * inkPrinterDpmm * 2f));
@@ -484,7 +485,8 @@ namespace PCBProduction3
                                                     false,
                                                     (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (cxInFileUnits * 25.4f) : cxInFileUnits),
                                                     (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (cyInFileUnits * 25.4f) : cyInFileUnits),
-                                                    (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (diameterInFileUnits * 25.4f) : diameterInFileUnits)
+                                                    (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (diameterInFileUnits * 25.4f) : diameterInFileUnits),
+                                                    false
                                                 );
                                                 if (curHole.diameterMm > allowSoldermaskTentingHoleDiameterLessThanMm)
                                                 {

@@ -81,7 +81,8 @@ namespace PCBProduction3
                             false,
                             (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (cxInFileUnits * 25.4f) : cxInFileUnits),
                             (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (cyInFileUnits * 25.4f) : cyInFileUnits),
-                            (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (diameterInFileUnits * 25.4f) : diameterInFileUnits)
+                            (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (diameterInFileUnits * 25.4f) : diameterInFileUnits),
+                            false
                         )
                     );
                 }
@@ -92,6 +93,8 @@ namespace PCBProduction3
             SizeF simagePhysicalSizeInMm = new SizeF((float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (bounds.Width * 25.4f) : bounds.Width), (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (bounds.Height * 25.4f) : bounds.Height));
             int possibleCols = (int)Math.Ceiling((double)workImagePhysicalSizeInMm.Width / (double)simagePhysicalSizeInMm.Width);
             int possibleRows = (int)Math.Ceiling((double)workImagePhysicalSizeInMm.Height / (double)simagePhysicalSizeInMm.Height);
+            int fullCols = (int)Math.Floor((double)workImagePhysicalSizeInMm.Width / (double)simagePhysicalSizeInMm.Width);
+            int fullRows = (int)Math.Floor((double)workImagePhysicalSizeInMm.Height / (double)simagePhysicalSizeInMm.Height);
             if (possibleCols < 1 || possibleRows < 1)
             {
                 throw new Exception("PCB too large.");
@@ -107,7 +110,8 @@ namespace PCBProduction3
                             false,
                             MainForm.spaceOuterMm + MainForm.holderHolesIndentMm + MainForm.gapBetweenPCBsMm + hole.holeCenterMmX + ((simagePhysicalSizeInMm.Width + (MainForm.gapBetweenPCBsMm * 2.0f)) * ix),
                             MainForm.spaceOuterMm + MainForm.holderHolesIndentMm + MainForm.gapBetweenPCBsMm + hole.holeCenterMmY + ((simagePhysicalSizeInMm.Height + (MainForm.gapBetweenPCBsMm * 2.0f)) * iy),
-                            (float)Math.Round(hole.diameterMm, 1)
+                            (float)Math.Round(hole.diameterMm, 1),
+                            (ix >= fullCols || iy >= fullRows)
                         );
                         if ((newHole.holeCenterMmX + hole.diameterMm) > (workImagePhysicalSizeInMm.Width + MainForm.spaceOuterMm + MainForm.holderHolesIndentMm))
                         {
@@ -128,17 +132,17 @@ namespace PCBProduction3
             float holderHoleRectRight = MainForm.spaceOuterMm + workImagePhysicalSizeInMm.Width + (MainForm.holderHolesIndentMm * 2f);
             float holderHoleRectRightDoubleDelta = MainForm.spaceOuterMm + MainForm.workImagePhysWidthMm + (MainForm.holderHolesIndentMm * 2f);
             float holderHoleRectBottom = MainForm.spaceOuterMm + workImagePhysicalSizeInMm.Height + (MainForm.holderHolesIndentMm * 2f);
-            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.0f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.0f), MainForm.anchorHoleDiameterMm));
-            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.0f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.25f), MainForm.anchorHoleDiameterMm));
-            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.0f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.5f), 2.0f));
-            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.0f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 1.0f), MainForm.anchorHoleDiameterMm));
-            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.5f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 1.0f), 2.0f));
-            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 1.0f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 1.0f), MainForm.anchorHoleDiameterMm));
-            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 1.0f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.5f), 2.0f));
-            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 1.0f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.0f), MainForm.anchorHoleDiameterMm));
-            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.5f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.0f), 2.0f));
-            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.35f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.0f), MainForm.anchorHoleDiameterMm));
-            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.2f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.0f), MainForm.anchorHoleDiameterMm));
+            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.0f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.0f), MainForm.anchorHoleDiameterMm, false));
+            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.0f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.25f), MainForm.anchorHoleDiameterMm, false));
+            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.0f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.5f), 2.0f, false));
+            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.0f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 1.0f), MainForm.anchorHoleDiameterMm, false));
+            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.5f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 1.0f), 2.0f, false));
+            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 1.0f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 1.0f), MainForm.anchorHoleDiameterMm, false));
+            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 1.0f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.5f), 2.0f, false));
+            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 1.0f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.0f), MainForm.anchorHoleDiameterMm, false));
+            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.5f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.0f), 2.0f, false));
+            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.35f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.0f), MainForm.anchorHoleDiameterMm, false));
+            totalHoleList.Add(new CHole(true, Utils.Lerp(holderHoleRectLeft, holderHoleRectRight, 0.2f), Utils.Lerp(holderHoleRectTop, holderHoleRectBottom, 0.0f), MainForm.anchorHoleDiameterMm, false));
 
             // Free resources
             gerberVS.UnloadAllLayers(proj);
@@ -368,12 +372,16 @@ namespace PCBProduction3
             return Math.Clamp(transformProgressPercent, 0, 100);
         }
 
-        private List<List<CHole>> GroupHolesAndSortByMoveDistanceAndDiameter(bool includeAnchors, bool includeMain)
+        private List<List<CHole>> GroupHolesAndSortByMoveDistanceAndDiameter(bool includeAnchors, bool includeMain, bool includePartialPCBs)
         {
             // Primary Filter
             List<CHole> primaryFilteredHoleList = new List<CHole>();
             for (int i = 0; i < totalHoleList.Count; i++)
             {
+                if (totalHoleList[i].fromPartialPCB && !includePartialPCBs)
+                {
+                    continue;
+                }
                 if (totalHoleList[i].isAnchor)
                 {
                     if (includeAnchors)
@@ -403,9 +411,9 @@ namespace PCBProduction3
             return results;
         }
 
-        public float GetDrillingTimeSeconds(bool drillMainHoles, float zDist)
+        public float GetDrillingTimeSeconds(bool drillMainHoles, bool drillPartialPCBs, float zDist)
         {
-            List<List<CHole>> ourHolesByTool = GroupHolesAndSortByMoveDistanceAndDiameter(true, drillMainHoles);
+            List<List<CHole>> ourHolesByTool = GroupHolesAndSortByMoveDistanceAndDiameter(true, drillMainHoles, drillPartialPCBs);
             if (ourHolesByTool.Count <= 0)
             {
                 return 0.0f;
@@ -536,7 +544,7 @@ namespace PCBProduction3
                 return ((totalSlowDistMm / cuttingRateMmPerMin) + (totalFastDistMm / Math.Min(maxFeedRateMmPerMinX, maxFeedRateMmPerMinY))) * 60.0f;
             } else
             {
-                List<List<CHole>> ourHolesByTool = GroupHolesAndSortByMoveDistanceAndDiameter(false, true);
+                List<List<CHole>> ourHolesByTool = GroupHolesAndSortByMoveDistanceAndDiameter(false, true, true);
                 if (ourHolesByTool.Count <= 0)
                 {
                     return 0.0f;
@@ -582,8 +590,8 @@ namespace PCBProduction3
         private bool IsPointAwayFromHolesFromBothSides(Vector2 point)
         {
             float panelWidthMm = MainForm.workImagePhysWidthMm + (MainForm.spaceOuterMm + MainForm.holderHolesIndentMm) * 2f;
-            CHole closestHoleTop = totalHoleList.MinBy((e) => Vector2.Distance(point, new Vector2(e.holeCenterMmX, e.holeCenterMmY))) ?? new CHole(false, 10000f, 10000f, 1f);
-            CHole closestHoleBottom = totalHoleList.MinBy((e) => Vector2.Distance(point, new Vector2(panelWidthMm - e.holeCenterMmX, e.holeCenterMmY))) ?? new CHole(false, 10000f, 10000f, 1f);
+            CHole closestHoleTop = totalHoleList.MinBy((e) => Vector2.Distance(point, new Vector2(e.holeCenterMmX, e.holeCenterMmY))) ?? new CHole(false, 10000f, 10000f, 1f, false);
+            CHole closestHoleBottom = totalHoleList.MinBy((e) => Vector2.Distance(point, new Vector2(panelWidthMm - e.holeCenterMmX, e.holeCenterMmY))) ?? new CHole(false, 10000f, 10000f, 1f, false);
             float dist1 = Vector2.Distance(point, new Vector2(closestHoleTop.holeCenterMmX, closestHoleTop.holeCenterMmY));
             float dist2 = Vector2.Distance(point, new Vector2(closestHoleBottom.holeCenterMmX, closestHoleBottom.holeCenterMmY));
             return (dist1 > ((closestHoleTop.diameterMm + 3f) / 2f)) && (dist2 > ((closestHoleBottom.diameterMm + 3f) / 2f));
@@ -635,7 +643,7 @@ namespace PCBProduction3
             StateChanged.Invoke(this, new EventArgs());
         }
 
-        private void DoDrillingProcess(bool shouldDrillMainHoles, int newPanelIdx, float alSafeHeightMm, float alWorkpieceThicknessMm)
+        private void DoDrillingProcess(bool shouldDrillMainHoles, bool shouldDrillPartialPCBs, int newPanelIdx, float alSafeHeightMm, float alWorkpieceThicknessMm)
         {
             try
             {
@@ -647,7 +655,7 @@ namespace PCBProduction3
                 StateChanged.Invoke(this, new EventArgs());
 
                 // Grouped Holes By Tool Diameter (From Large To Small)
-                List<List<CHole>> ourHolesByTool = GroupHolesAndSortByMoveDistanceAndDiameter(true, shouldDrillMainHoles);
+                List<List<CHole>> ourHolesByTool = GroupHolesAndSortByMoveDistanceAndDiameter(true, shouldDrillMainHoles, shouldDrillPartialPCBs);
                 if (ourHolesByTool.Count <= 0)
                 {
                     throw new Exception("Нечего сверлить.");
@@ -1267,7 +1275,7 @@ namespace PCBProduction3
                 } else
                 {
                     // Drill
-                    List<List<CHole>> ourHolesByTool = GroupHolesAndSortByMoveDistanceAndDiameter(false, true);
+                    List<List<CHole>> ourHolesByTool = GroupHolesAndSortByMoveDistanceAndDiameter(false, true, true);
                     int i = 0;
                     int holesDrilled = 0;
                     int holesTotalThisRun = ourHolesByTool.Sum(o => o.Count);
@@ -1373,7 +1381,7 @@ namespace PCBProduction3
             }
         }
 
-        public void StartDrillingProcess(bool drillMainHoles, int newPanelIdx, float alSafeHeightMm, float alWorkpieceThicknessMm)
+        public void StartDrillingProcess(bool drillMainHoles, bool drillPartialPCBs, int newPanelIdx, float alSafeHeightMm, float alWorkpieceThicknessMm)
         {
             if (!IsConnected() || IsFault())
             {
@@ -1386,7 +1394,7 @@ namespace PCBProduction3
             shouldCancelOp = false;
             workThread = new Thread(new ThreadStart(delegate
             {
-                DoDrillingProcess(drillMainHoles, newPanelIdx, alSafeHeightMm, alWorkpieceThicknessMm);
+                DoDrillingProcess(drillMainHoles, drillPartialPCBs, newPanelIdx, alSafeHeightMm, alWorkpieceThicknessMm);
             }));
             workThread?.Start();
         }

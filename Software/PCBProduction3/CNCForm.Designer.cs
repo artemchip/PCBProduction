@@ -83,6 +83,7 @@
             btnPrintCalib = new Button();
             lblCalibInstr1 = new Label();
             newPanelTab = new TabPage();
+            cbDrillPartialPCBs = new CheckBox();
             nudDWorkpieceThicknessMm = new NumericUpDown();
             nudDSafeHeightMm = new NumericUpDown();
             lblDWorkpieceThickness = new Label();
@@ -674,6 +675,7 @@
             // 
             // newPanelTab
             // 
+            newPanelTab.Controls.Add(cbDrillPartialPCBs);
             newPanelTab.Controls.Add(nudDWorkpieceThicknessMm);
             newPanelTab.Controls.Add(nudDSafeHeightMm);
             newPanelTab.Controls.Add(lblDWorkpieceThickness);
@@ -692,11 +694,23 @@
             newPanelTab.Text = "Создание панели";
             newPanelTab.UseVisualStyleBackColor = true;
             // 
+            // cbDrillPartialPCBs
+            // 
+            cbDrillPartialPCBs.AutoSize = true;
+            cbDrillPartialPCBs.Checked = true;
+            cbDrillPartialPCBs.CheckState = CheckState.Checked;
+            cbDrillPartialPCBs.Location = new Point(3, 136);
+            cbDrillPartialPCBs.Name = "cbDrillPartialPCBs";
+            cbDrillPartialPCBs.Size = new Size(284, 19);
+            cbDrillPartialPCBs.TabIndex = 11;
+            cbDrillPartialPCBs.Text = "Сверлить частично вошедшие в панель платы";
+            cbDrillPartialPCBs.UseVisualStyleBackColor = true;
+            // 
             // nudDWorkpieceThicknessMm
             // 
             nudDWorkpieceThicknessMm.DecimalPlaces = 1;
             nudDWorkpieceThicknessMm.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-            nudDWorkpieceThicknessMm.Location = new Point(226, 169);
+            nudDWorkpieceThicknessMm.Location = new Point(226, 187);
             nudDWorkpieceThicknessMm.Maximum = new decimal(new int[] { 5, 0, 0, 0 });
             nudDWorkpieceThicknessMm.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             nudDWorkpieceThicknessMm.Name = "nudDWorkpieceThicknessMm";
@@ -708,7 +722,7 @@
             // 
             nudDSafeHeightMm.DecimalPlaces = 1;
             nudDSafeHeightMm.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-            nudDSafeHeightMm.Location = new Point(226, 140);
+            nudDSafeHeightMm.Location = new Point(226, 158);
             nudDSafeHeightMm.Maximum = new decimal(new int[] { 5, 0, 0, 0 });
             nudDSafeHeightMm.Minimum = new decimal(new int[] { 8, 0, 0, 65536 });
             nudDSafeHeightMm.Name = "nudDSafeHeightMm";
@@ -719,16 +733,16 @@
             // lblDWorkpieceThickness
             // 
             lblDWorkpieceThickness.AutoSize = true;
-            lblDWorkpieceThickness.Location = new Point(0, 172);
+            lblDWorkpieceThickness.Location = new Point(0, 190);
             lblDWorkpieceThickness.Name = "lblDWorkpieceThickness";
-            lblDWorkpieceThickness.Size = new Size(143, 15);
+            lblDWorkpieceThickness.Size = new Size(142, 15);
             lblDWorkpieceThickness.TabIndex = 8;
             lblDWorkpieceThickness.Text = "Толщина заготовки, мм:";
             // 
             // lblDSafeHeight
             // 
             lblDSafeHeight.AutoSize = true;
-            lblDSafeHeight.Location = new Point(0, 142);
+            lblDSafeHeight.Location = new Point(0, 160);
             lblDSafeHeight.Name = "lblDSafeHeight";
             lblDSafeHeight.Size = new Size(225, 15);
             lblDSafeHeight.TabIndex = 7;
@@ -736,7 +750,7 @@
             // 
             // pbDrilling
             // 
-            pbDrilling.Location = new Point(3, 199);
+            pbDrilling.Location = new Point(3, 217);
             pbDrilling.Name = "pbDrilling";
             pbDrilling.Size = new Size(579, 23);
             pbDrilling.TabIndex = 6;
@@ -747,7 +761,7 @@
             gbDrillUserInput.Controls.Add(lblDInstr);
             gbDrillUserInput.Controls.Add(btnDInstr2);
             gbDrillUserInput.Controls.Add(btnDInstr1);
-            gbDrillUserInput.Location = new Point(3, 257);
+            gbDrillUserInput.Location = new Point(3, 275);
             gbDrillUserInput.Name = "gbDrillUserInput";
             gbDrillUserInput.Size = new Size(579, 89);
             gbDrillUserInput.TabIndex = 5;
@@ -809,7 +823,7 @@
             // 
             // btnDrill
             // 
-            btnDrill.Location = new Point(3, 228);
+            btnDrill.Location = new Point(3, 246);
             btnDrill.Name = "btnDrill";
             btnDrill.Size = new Size(124, 23);
             btnDrill.TabIndex = 3;
@@ -1175,5 +1189,6 @@
         private PictureBox pbDepanelizePreview;
         private CheckBox cbInvertY;
         private CheckBox cbInvertX;
+        private CheckBox cbDrillPartialPCBs;
     }
 }

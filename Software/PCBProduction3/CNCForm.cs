@@ -220,6 +220,7 @@ namespace PCBProduction3
                 }
                 pbDrilling.Value = (ourMachine.IsDrillingPending()) ? ourMachine.GetDrillingProgressPercent() : 0;
                 cbDrillMainHoles.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask() && ourMachine.IsCalibrated();
+                cbDrillPartialPCBs.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask() && ourMachine.IsCalibrated();
                 nudDWorkpieceThicknessMm.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask() && ourMachine.IsCalibrated();
                 nudDSafeHeightMm.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask() && ourMachine.IsCalibrated();
                 rbPanelPos1.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask() && ourMachine.IsCalibrated();
@@ -612,7 +613,7 @@ namespace PCBProduction3
                 {
                     // Начать, оценить время
                     float totalZDist = (float)(nudDSafeHeightMm.Value + nudDWorkpieceThicknessMm.Value);
-                    float timeSec = ourMachine.GetDrillingTimeSeconds(cbDrillMainHoles.Checked, totalZDist);
+                    float timeSec = ourMachine.GetDrillingTimeSeconds(cbDrillMainHoles.Checked, cbDrillPartialPCBs.Checked, totalZDist);
                     if (MessageBox.Show(this, "Начать создание панели? Процесс займет около " + (timeSec / 60f).ToString("0") + " минут. Убедитесь, что в константах программы указаны правильные скорости подачи, безопасные Z и скорости шпинделя", "PCBProduction3", MessageBoxButtons.YesNo) == DialogResult.Yes)
                     {
                         int panelIdx = -1;
@@ -629,7 +630,7 @@ namespace PCBProduction3
                             ShowMessageBox("Неверное местоположение панели.");
                             return;
                         }
-                        ourMachine.StartDrillingProcess(cbDrillMainHoles.Checked, panelIdx, (float)nudDSafeHeightMm.Value, (float)nudDWorkpieceThicknessMm.Value);
+                        ourMachine.StartDrillingProcess(cbDrillMainHoles.Checked, cbDrillPartialPCBs.Checked, panelIdx, (float)nudDSafeHeightMm.Value, (float)nudDWorkpieceThicknessMm.Value);
                     }
                 }
                 else if (((int)btnDrill.Tag!) == 2)

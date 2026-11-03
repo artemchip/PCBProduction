@@ -12,13 +12,15 @@ namespace PCBProduction3
         public float holeCenterMmX = 0.0f;
         public float holeCenterMmY = 0.0f;
         public float diameterMm = 0.0f;
+        public bool fromPartialPCB = false;
 
-        public CHole(bool isAnchor, float holeCenterX, float holeCenterY, float diameter)
+        public CHole(bool isAnchor, float holeCenterX, float holeCenterY, float diameter, bool fromPartialPCB)
         {
             this.isAnchor = isAnchor;
             this.holeCenterMmX = holeCenterX;
             this.holeCenterMmY = holeCenterY;
             this.diameterMm = diameter;
+            this.fromPartialPCB = fromPartialPCB;
         }
     }
 }
