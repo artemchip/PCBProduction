@@ -82,8 +82,8 @@ namespace PCBProduction3
                 // Stack images
                 SizeF workImagePhysicalSizeInMm = new SizeF(MainForm.workImagePhysWidthMm, MainForm.workImagePhysHeightMm);
                 SizeF simagePhysicalSizeInMm = new SizeF((float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (bounds.Width * 25.4f) : bounds.Width), (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (bounds.Height * 25.4f) : bounds.Height));
-                int possibleCols = (int)Math.Floor((double)workImagePhysicalSizeInMm.Width / (double)simagePhysicalSizeInMm.Width);
-                int possibleRows = (int)Math.Floor((double)workImagePhysicalSizeInMm.Height / (double)simagePhysicalSizeInMm.Height);
+                int possibleCols = (int)Math.Floor((double)workImagePhysicalSizeInMm.Width / (double)(simagePhysicalSizeInMm.Width + (MainForm.gapBetweenPCBsMm * 2.0f)));
+                int possibleRows = (int)Math.Floor((double)workImagePhysicalSizeInMm.Height / (double)(simagePhysicalSizeInMm.Height + (MainForm.gapBetweenPCBsMm * 2.0f)));
                 if (possibleCols < 1 || possibleRows < 1)
                 {
                     throw new Exception("PCB too large.");

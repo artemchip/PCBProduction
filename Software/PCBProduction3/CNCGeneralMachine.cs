@@ -14,6 +14,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.Arm;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -142,6 +143,7 @@ namespace PCBProduction3
 
         // Константы конкретно моего станка
         protected float calibZMm = 18.0f;
+        protected float laserZInFocusMm = 45.0f;
 
         // Инициализация, специфика
         private int camerasNeeded;
@@ -177,6 +179,8 @@ namespace PCBProduction3
         // Расстояние между инструментом и камерой
         private float camToToolDistX = 0.0f;
         private float camToToolDistY = 0.0f;
+        private float camToLaserDistX = 0.0f;
+        private float camToLaserDistY = 0.0f;
 
         // Калибровка PNP
         protected float cAddAngle = 0.0f;
@@ -236,6 +240,8 @@ namespace PCBProduction3
                 fovYToPercent = storage.GetNode("fov_y_to").ReadInt();
                 camToToolDistX = storage.GetNode("cam_to_tool_dist_x").ReadFloat();
                 camToToolDistY = storage.GetNode("cam_to_tool_dist_y").ReadFloat();
+                camToLaserDistX = storage.GetNode("cam_to_laser_dist_x").ReadFloat();
+                camToLaserDistY = storage.GetNode("cam_to_laser_dist_y").ReadFloat();
                 cPositiveClockwise = storage.GetNode("c_positive_clockwise").ReadInt() > 0;
                 stepsPerFullCTurn = storage.GetNode("steps_per_full_c_turn").ReadInt();
                 cAddAngle = storage.GetNode("c_add_angle").ReadFloat();
@@ -265,6 +271,8 @@ namespace PCBProduction3
             storage.Write(fovYToPercent, "fov_y_to");
             storage.Write(camToToolDistX, "cam_to_tool_dist_x");
             storage.Write(camToToolDistY, "cam_to_tool_dist_y");
+            storage.Write(camToLaserDistX, "cam_to_laser_dist_x");
+            storage.Write(camToLaserDistY, "cam_to_laser_dist_y");
             storage.Write(cPositiveClockwise ? 1 : 0, "c_positive_clockwise");
             storage.Write(stepsPerFullCTurn, "steps_per_full_c_turn");
             storage.Write(cAddAngle, "c_add_angle");
@@ -542,7 +550,7 @@ namespace PCBProduction3
             {
                 movePending = true;
                 StateChanged.Invoke(this, new EventArgs());
-                MoveRelativeAndWaitForCompletionInternal(false, qX, qY, qZ, -1.0f, true);
+                MoveRelativeInternal(false, qX, qY, qZ, -1.0f, true, true);
                 movePending = false;
                 StateChanged.Invoke(this, new EventArgs());
             }
@@ -1245,6 +1253,26 @@ namespace PCBProduction3
             MoveRelativeAndWaitForCompletion(useg1, dX, dY, dZ, feedRateMmPerMin);
         }
 
+        protected int MoveToAbsolutePositionAsync(bool useg1, float? newMmX, float? newMmY, float? newMmZ, float feedRateMmPerMin)
+        {
+            float dX = 0.0f;
+            float dY = 0.0f;
+            float dZ = 0.0f;
+            if (newMmX != null)
+            {
+                dX = (float)(newMmX - absMmX);
+            }
+            if (newMmY != null)
+            {
+                dY = (float)(newMmY - absMmY);
+            }
+            if (newMmZ != null)
+            {
+                dZ = (float)(newMmZ - absMmZ);
+            }
+            return MoveRelativeAsync(useg1, dX, dY, dZ, feedRateMmPerMin);
+        }
+
         private String GetGCodeCommand(String cmd, float mX, float mY, float mZ, float feedRate)
         {
             // Компенсация кривизны станка
@@ -1295,10 +1323,15 @@ namespace PCBProduction3
         }
 
         protected void MoveRelativeAndWaitForCompletion(bool useg1, float relMmX, float relMmY, float relMmZ, float feedRateMmPerMin) {
-            MoveRelativeAndWaitForCompletionInternal(useg1, relMmX, relMmY, relMmZ, feedRateMmPerMin, false);
+            MoveRelativeInternal(useg1, relMmX, relMmY, relMmZ, feedRateMmPerMin, false, true);
         }
 
-        protected void MoveRelativeAndWaitForCompletionInternal(bool useg1, float relMmX, float relMmY, float relMmZ, float feedRateMmPerMin, bool fromUI)
+        protected int MoveRelativeAsync(bool useg1, float relMmX, float relMmY, float relMmZ, float feedRateMmPerMin)
+        {
+            return MoveRelativeInternal(useg1, relMmX, relMmY, relMmZ, feedRateMmPerMin, false, false);
+        }
+
+        protected int MoveRelativeInternal(bool useg1, float relMmX, float relMmY, float relMmZ, float feedRateMmPerMin, bool fromUI, bool waitForCompletion)
         {
             bool hasAllowingMoveUserInput = curUserEntry < 0 && (curUserEntryAllowXYMove || curUserEntryAllowZMove);
             if (!fromUI && movePending)
@@ -1319,6 +1352,15 @@ namespace PCBProduction3
             GrblSendLine(GetGCodeCommand((useg1) ? "G1" : "G0", relMmX, relMmY, relMmZ, feedRateMmPerMin));
             int plannedMillis = MillisecToExecuteMove(relMmX, relMmY, relMmZ, feedRateMmPerMin, feedRateMmPerMin, feedRateMmPerMin);
             int factualMillis = 0;
+            if (!waitForCompletion)
+            {
+                sw.Stop();
+                absMmX += relMmX;
+                absMmY += relMmY;
+                absMmZ += relMmZ;
+                StateChanged.Invoke(this, new EventArgs());
+                return plannedMillis - (int)sw.ElapsedMilliseconds;
+            }
             while (grblCommandCmpl < 1)
             {
                 Thread.Sleep(10);
@@ -1360,6 +1402,7 @@ namespace PCBProduction3
                 Thread.Sleep(leftToWaitMillis);
             }
             StateChanged.Invoke(this, new EventArgs());
+            return 0;
         }
 
         private void camWatchdogTick()
@@ -1415,7 +1458,62 @@ namespace PCBProduction3
             }
         }
 
-        protected void SetSpindleRpm(int rpm)
+        protected void TurnLaserMode(bool laser)
+        {
+            grblCommandCmpl = 0;
+            GrblSendLine("$32=" + ((laser) ? "1" : "0"));
+            int timeout = 0;
+            while (grblCommandCmpl < 1)
+            {
+                Thread.Sleep(10);
+                timeout++;
+                if (timeout > 200)
+                {
+                    break;
+                }
+            }
+            if (grblCommandCmpl >= 2)
+            {
+                throw new Exception("Ошибка ЧПУ станка при запуске шпинделя.");
+            }
+        }
+
+        protected void SetLaserPower(int units)
+        {
+            grblCommandCmpl = 0;
+            if (units > 0)
+            {
+                GrblSendLine("M4 S" + units.ToString("0"));
+            }
+            else
+            {
+                GrblSendLine("M5");
+            }
+            int timeout = 0;
+            while (grblCommandCmpl < 1)
+            {
+                Thread.Sleep(10);
+                timeout++;
+                if (timeout > 200)
+                {
+                    break;
+                }
+            }
+            if (grblCommandCmpl >= 2)
+            {
+                throw new Exception("Ошибка ЧПУ станка при включении лазера.");
+            }
+            if (units > 0)
+            {
+                spindleActive = true;
+            }
+            else
+            {
+                spindleActive = false;
+            }
+        }
+
+        protected void SetSpindleRpm(int rpm, bool wait)
         {
             grblCommandCmpl = 0;
             if (rpm > 0)
@@ -1442,7 +1540,7 @@ namespace PCBProduction3
             if (rpm > 0)
             {
                 spindleActive = true;
-                Thread.Sleep(4000);
+                if (wait) Thread.Sleep(4000);
             } else
             {
                 spindleActive = false;
@@ -1454,9 +1552,14 @@ namespace PCBProduction3
             return motionStepsPerMmX != 800.0f && motionStepsPerMmY != 800.0f && motionSkewAngleRad != 0.0f;
         }
 
-        public bool IsCamOffsetCalibrated()
+        public bool IsCamOffset1Calibrated()
         {
             return camToToolDistX != 0.0f && camToToolDistY != 0.0f;
+        }
+
+        public bool IsCamOffset2Calibrated()
+        {
+            return camToLaserDistX != 0.0f && camToLaserDistY != 0.0f;
         }
 
         public bool IsPNPCalibrated()
@@ -1468,11 +1571,11 @@ namespace PCBProduction3
         {
             if (machineIP.Length > 0)
             {
-                return IsCamOffsetCalibrated() && IsMotionStepCalibrated() && IsPNPCalibrated();
+                return IsCamOffset1Calibrated() && IsMotionStepCalibrated() && IsPNPCalibrated();
             }
             else
             {
-                return IsCamOffsetCalibrated() && IsMotionStepCalibrated();
+                return IsCamOffset1Calibrated() && IsCamOffset2Calibrated() && IsMotionStepCalibrated();
             }
         }
 
@@ -1690,8 +1793,44 @@ namespace PCBProduction3
 
                     // Save
                     SaveSettingsToFile();
-                } else if (which == 2)
+                }
+                else if (which == 2)
                 {
+                    // Z-Level
+                    MoveToAbsolutePositionAndWaitForCompletion(false, null, null, laserZInFocusMm, -1.0f);
+
+                    // Ask User
+                    int res = AskUserForInput("Используя стрелки и выключатель лазера в панели слева, прожгите пятно на плоском материале (который лежит на столе станка), затем не сдвигаясь по XY, нажмите кнопку [готово].", new List<string> { "Готово", "Отмена" }, 0, true, true, true);
+                    if (res > 0)
+                    {
+                        throw new Exception("Операция отменена.");
+                    }
+
+                    // Z-Level
+                    MoveToAbsolutePositionAndWaitForCompletion(false, null, null, laserZInFocusMm, -1.0f);
+
+                    // Зафиксировать позицию
+                    float initialPosMmX = absMmX + 0.0f;
+                    float initialPosMmY = absMmY + 0.0f;
+
+                    // Ask Again
+                    res = AskUserForInput("Переместитесь по XY так чтобы прожженное пятно оказалось в центре изображения камеры.", new List<string> { "Готово", "Отмена" }, 0, true, true, false);
+
+                    // Reset
+                    camToLaserDistX = absMmX - initialPosMmX;
+                    camToLaserDistY = absMmY - initialPosMmY;
+
+                    // Save
+                    SaveSettingsToFile();
+                }
+                else if (which == 3)
+                {
+                    // Check
+                    if (camToToolDistX == 0.0f || camToToolDistY == 0.0f)
+                    {
+                        throw new Exception("Не откалибровано смещение камера-сопло.");
+                    }
+
                     // Перемещаем Z в median
                     MoveToSafeZ();
 
@@ -1801,7 +1940,7 @@ namespace PCBProduction3
             }
         }
 
-        public void ToggleSpindleFromUI()
+        public void ToggleSpindleFromUI(int units)
         {
             bool hasUserInputWithSpindleAllowed = curUserEntry < 0 && curUserEntryAllowSpindle;
             if (IsBusyWithLongTask() && !hasUserInputWithSpindleAllowed)
@@ -1818,12 +1957,13 @@ namespace PCBProduction3
             }
             if (spindleActive)
             {
-                SetSpindleRpm(0);
+                SetSpindleRpm(0, false);
             } else
             {
-                SetSpindleRpm(4000);
+                SetSpindleRpm(units, false);
             }
         }
+
         public void PrintCalibPattern()
         {
             PrintDocument pd = new PrintDocument();
@@ -2037,6 +2177,16 @@ namespace PCBProduction3
         public float GetCamToToolDistY()
         {
             return camToToolDistY;
+        }
+
+        public float GetCamToLaserDistX()
+        {
+            return camToLaserDistX;
+        }
+
+        public float GetCamToLaserDistY()
+        {
+            return camToLaserDistY;
         }
 
         public int GetStepsPerFullCTurn()

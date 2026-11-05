@@ -5,6 +5,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using static Emgu.CV.DISOpticalFlow;
 
 namespace PCBProduction3
 {
@@ -21,6 +22,8 @@ namespace PCBProduction3
         private List<ALVertice> alVertices = new List<ALVertice>();
         private List<CHole> totalHoleList = new List<CHole>();
         private List<PointF[]> contoursToDepanelizeMm = new List<PointF[]>();
+        private List<PointF[]> contoursToCureSilkscreenTop = new List<PointF[]>();
+        private List<PointF[]> contoursToCureSilkscreenBottom = new List<PointF[]>();
         private Vector2 dCornerTLMm = new Vector2(0.0f, 0.0f);
         private Vector2 dCornerTRMm = new Vector2(0.0f, 0.0f);
         private Vector2 dCorner3Mm = new Vector2(0.0f, 0.0f);
@@ -50,6 +53,10 @@ namespace PCBProduction3
         private float secondPanelX = 146.0f;
         private float secondPanelY = 21.0f;
 
+        // Мои константы - лазер
+        private float laserRateMmPerMin = 750.0f;
+        private int laserPower = 1000;
+
         public MillingMachine(String gerberFilesDir, String configFilePath, int xCamerasNeeded, int xPreviewBoxWidth, int xPreviewBoxHeight, EventHandler xStateChanged, EventHandler<ErrorEventArgs> xErrorOccurred, EventHandler<NewCameraPreviewImageArgs> xNewCameraPreviewImage, EventHandler<UserInputRequiredArgs> xUserInputRequired) : base(configFilePath, xCamerasNeeded, xPreviewBoxWidth, xPreviewBoxHeight, xStateChanged, xErrorOccurred, xNewCameraPreviewImage, xUserInputRequired)
         {
             // Константа
@@ -59,6 +66,7 @@ namespace PCBProduction3
             GerberFolderParser.LoadLayers(gerberFilesDir);
             ProcessDrills(GerberFolderParser.gbrDrillFile, GerberFolderParser.gbrProfileFile);
             ProcessIndividualCutouts(GerberFolderParser.gbrProfileFile, false, false);
+            ProcessSilkscreen(GerberFolderParser.gbrProfileFile, false, false);
         }
 
         private void ProcessDrills(String inputFile, String profileFile)
@@ -91,10 +99,10 @@ namespace PCBProduction3
             // Stack images
             SizeF workImagePhysicalSizeInMm = new SizeF(MainForm.workImagePhysWidthMm, MainForm.workImagePhysHeightMm);
             SizeF simagePhysicalSizeInMm = new SizeF((float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (bounds.Width * 25.4f) : bounds.Width), (float)((proj.FileInfo[0].Image.Unit == GerberUnit.Inch) ? (bounds.Height * 25.4f) : bounds.Height));
-            int possibleCols = (int)Math.Ceiling((double)workImagePhysicalSizeInMm.Width / (double)simagePhysicalSizeInMm.Width);
-            int possibleRows = (int)Math.Ceiling((double)workImagePhysicalSizeInMm.Height / (double)simagePhysicalSizeInMm.Height);
-            int fullCols = (int)Math.Floor((double)workImagePhysicalSizeInMm.Width / (double)simagePhysicalSizeInMm.Width);
-            int fullRows = (int)Math.Floor((double)workImagePhysicalSizeInMm.Height / (double)simagePhysicalSizeInMm.Height);
+            int possibleCols = (int)Math.Ceiling((double)workImagePhysicalSizeInMm.Width / (double)(simagePhysicalSizeInMm.Width + (MainForm.gapBetweenPCBsMm * 2.0f)));
+            int possibleRows = (int)Math.Ceiling((double)workImagePhysicalSizeInMm.Height / (double)(simagePhysicalSizeInMm.Height + (MainForm.gapBetweenPCBsMm * 2.0f)));
+            int fullCols = (int)Math.Floor((double)workImagePhysicalSizeInMm.Width / (double)(simagePhysicalSizeInMm.Width + (MainForm.gapBetweenPCBsMm * 2.0f)));
+            int fullRows = (int)Math.Floor((double)workImagePhysicalSizeInMm.Height / (double)(simagePhysicalSizeInMm.Height + (MainForm.gapBetweenPCBsMm * 2.0f)));
             if (possibleCols < 1 || possibleRows < 1)
             {
                 throw new Exception("PCB too large.");
@@ -323,6 +331,16 @@ namespace PCBProduction3
             }
         }
 
+        public void ProcessSilkscreen(String profileFile, bool invertX, bool invertY)
+        {
+            // TODO fill contoursSilkscren from gerber files, do not let it cover copper pad
+            contoursToCureSilkscreenTop.Clear();
+            contoursToCureSilkscreenBottom.Clear();
+            PointF[] rectContour = { new PointF(MainForm.spaceOuterMm + MainForm.holderHolesIndentMm, MainForm.spaceOuterMm + MainForm.holderHolesIndentMm), new PointF(MainForm.workImagePhysWidthMm + MainForm.spaceOuterMm + MainForm.holderHolesIndentMm, MainForm.spaceOuterMm + MainForm.holderHolesIndentMm), new PointF(MainForm.workImagePhysWidthMm + MainForm.spaceOuterMm + MainForm.holderHolesIndentMm, MainForm.workImagePhysHeightMm + MainForm.spaceOuterMm + MainForm.holderHolesIndentMm), new PointF(MainForm.spaceOuterMm + MainForm.holderHolesIndentMm, MainForm.workImagePhysHeightMm + MainForm.spaceOuterMm + MainForm.holderHolesIndentMm), new PointF(MainForm.spaceOuterMm + MainForm.holderHolesIndentMm, MainForm.spaceOuterMm + MainForm.holderHolesIndentMm) };
+            contoursToCureSilkscreenTop.Add(rectContour);
+            contoursToCureSilkscreenBottom.Add(rectContour);
+        }
+
         public List<PointF[]> SplitContour(PointF[] contour)
         {
             List<PointF[]> result = new List<PointF[]>();
@@ -468,7 +486,7 @@ namespace PCBProduction3
             return totalTimeSec;
         }
 
-        public Bitmap GetGreenDepanelizeBitmap(int rDPI)
+        public Bitmap GetGreenDepanelizeBitmap(int rDPI, int transformProcessType)
         {
             float pixelsPerMm = (((float)rDPI) / 25.4f);
             float panelSizeWidthMm = MainForm.workImagePhysWidthMm + (MainForm.spaceOuterMm + MainForm.holderHolesIndentMm) * 2f;
@@ -476,21 +494,36 @@ namespace PCBProduction3
             Bitmap bmpResult = new Bitmap((int)(panelSizeWidthMm * pixelsPerMm), (int)(panelSizeHeightMm * pixelsPerMm), System.Drawing.Imaging.PixelFormat.Format24bppRgb);
             using (Graphics g = Graphics.FromImage(bmpResult))
             {
-                contourPen.Width = pixelsPerMm * MainForm.cuttingToolDiameterMm;
+                contourPen.Color = Color.White;
+                contourPen.Width = pixelsPerMm * ((transformProcessType > 1) ? 0.2f : MainForm.cuttingToolDiameterMm);
                 contourPen.SetLineCap(System.Drawing.Drawing2D.LineCap.Round, System.Drawing.Drawing2D.LineCap.Round, System.Drawing.Drawing2D.DashCap.Round);
                 g.Clear(Color.Black);
-                if (contoursToDepanelizeMm.Count > 0)
+                List<PointF[]> contoursToDrawMm;
+                if (transformProcessType <= 1)
                 {
-                    for (int i = 0; i < contoursToDepanelizeMm.Count; i++)
+                    contoursToDrawMm = contoursToDepanelizeMm;
+                } else if (transformProcessType == 2)
+                {
+                    contoursToDrawMm = contoursToCureSilkscreenTop;
+                } else if (transformProcessType == 3)
+                {
+                    contoursToDrawMm = contoursToCureSilkscreenBottom;
+                } else
+                {
+                    throw new Exception("Неверные аргументы.");
+                }
+                if (contoursToDrawMm.Count > 0)
+                {
+                    for (int i = 0; i < contoursToDrawMm.Count; i++)
                     {
                         List<PointF> gPoints = new List<PointF>();
                         PointF prevPoint = new PointF(-1f, -1f);
-                        if (contoursToDepanelizeMm[i].Length == 1)
+                        if (contoursToDrawMm[i].Length == 1)
                         {
                             float xdiameterMm = MainForm.cuttingToolDiameterMm;
                             Rectangle holeRect = new Rectangle(
-                                (int)((contoursToDepanelizeMm[i][0].X * pixelsPerMm) - ((xdiameterMm * pixelsPerMm) / 2f)),
-                                (int)((contoursToDepanelizeMm[i][0].Y * pixelsPerMm) - ((xdiameterMm * pixelsPerMm) / 2f)),
+                                (int)((contoursToDrawMm[i][0].X * pixelsPerMm) - ((xdiameterMm * pixelsPerMm) / 2f)),
+                                (int)((contoursToDrawMm[i][0].Y * pixelsPerMm) - ((xdiameterMm * pixelsPerMm) / 2f)),
                                 (int)(xdiameterMm * pixelsPerMm),
                                 (int)(xdiameterMm * pixelsPerMm)
                             );
@@ -498,9 +531,9 @@ namespace PCBProduction3
                         }
                         else
                         {
-                            for (int j = 0; j < contoursToDepanelizeMm[i].Length; j++)
+                            for (int j = 0; j < contoursToDrawMm[i].Length; j++)
                             {
-                                PointF curPoint = new PointF(contoursToDepanelizeMm[i][j].X * pixelsPerMm, contoursToDepanelizeMm[i][j].Y * pixelsPerMm);
+                                PointF curPoint = new PointF(contoursToDrawMm[i][j].X * pixelsPerMm, contoursToDrawMm[i][j].Y * pixelsPerMm);
                                 if (prevPoint.X != -1f && prevPoint.Y != -1f)
                                 {
                                     g.DrawLine(contourPen, prevPoint, curPoint);
@@ -514,35 +547,9 @@ namespace PCBProduction3
             return bmpResult;
         }
 
-        public float GetTransformTimeSeconds(bool depanelize)
+        public float GetTransformTimeSeconds(int processType)
         {
-            if (depanelize)
-            {
-                float totalSlowDistMm = 0.0f;
-                float totalFastDistMm = 0.0f;
-                float vmX = 0.0f;
-                float vmY = 0.0f;
-                foreach (PointF[] contour in contoursToDepanelizeMm)
-                {
-                    bool firstDone = false;
-                    foreach (PointF p in contour)
-                    {
-                        float curMoveDist = (float)Math.Sqrt(Math.Pow(p.X - vmX, 2) + Math.Pow(p.Y - vmY, 2));
-                        if (!firstDone)
-                        {
-                            totalFastDistMm += curMoveDist;
-                            firstDone = true;
-                        }
-                        else
-                        {
-                            totalSlowDistMm += curMoveDist;
-                        }
-                        vmX = p.X;
-                        vmY = p.Y;
-                    }
-                }
-                return ((totalSlowDistMm / cuttingRateMmPerMin) + (totalFastDistMm / Math.Min(maxFeedRateMmPerMinX, maxFeedRateMmPerMinY))) * 60.0f;
-            } else
+            if (processType == 0)
             {
                 List<List<CHole>> ourHolesByTool = GroupHolesAndSortByMoveDistanceAndDiameter(false, true, true);
                 if (ourHolesByTool.Count <= 0)
@@ -584,7 +591,42 @@ namespace PCBProduction3
                     }
                 }
                 return totalTimeSec;
+            } else if (processType == 1 || processType == 2 || processType == 3)
+            {
+                float totalSlowDistMm = 0.0f;
+                float totalFastDistMm = 0.0f;
+                float vmX = 0.0f;
+                float vmY = 0.0f;
+                foreach (PointF[] contour in ((processType == 2 || processType == 3) ? ((processType == 2) ? contoursToCureSilkscreenTop : contoursToCureSilkscreenBottom) : contoursToDepanelizeMm))
+                {
+                    bool firstDone = false;
+                    foreach (PointF p in contour)
+                    {
+                        float curMoveDist = (float)Math.Sqrt(Math.Pow(p.X - vmX, 2) + Math.Pow(p.Y - vmY, 2));
+                        if (!firstDone)
+                        {
+                            totalFastDistMm += curMoveDist;
+                            firstDone = true;
+                        }
+                        else
+                        {
+                            totalSlowDistMm += curMoveDist;
+                        }
+                        vmX = p.X;
+                        vmY = p.Y;
+                    }
+                }
+                float procRateMmPerMin = (processType == 1) ? cuttingRateMmPerMin : laserRateMmPerMin;
+                return ((totalSlowDistMm / procRateMmPerMin) + (totalFastDistMm / Math.Min(maxFeedRateMmPerMinX, maxFeedRateMmPerMinY))) * 60.0f;
+            } else
+            {
+                return 0.0f;
             }
+        }
+
+        public bool CanAdjustSpindleSpeed()
+        {
+            return !spindleActive;
         }
 
         private bool IsPointAwayFromHolesFromBothSides(Vector2 point)
@@ -677,7 +719,7 @@ namespace PCBProduction3
                         }
                     }
                 }
-                int res = AskUserForInput("Убедитесь, что у вас есть сверла диаметров: " + drillBitDiameters + " и фреза диаметром " + cuttingToolDiameterMm.ToString("0.0") + " мм.", new List<string> { "Есть", "Нет" }, 1, false, false, false);
+                int res = AskUserForInput("Подключите шпиндель, убедитесь, что у вас есть сверла диаметров: " + drillBitDiameters + " и фреза диаметром " + cuttingToolDiameterMm.ToString("0.0") + " мм.", new List<string> { "Есть", "Нет" }, 1, false, false, false);
                 if (res > 0)
                 {
                     throw new Exception("Операция отменена.");
@@ -798,7 +840,8 @@ namespace PCBProduction3
                     MoveToAbsolutePositionAndWaitForCompletion(false, null, null, probeZMm, -1.0f);
 
                     // Start spindle
-                    SetSpindleRpm(drillingRpm);
+                    TurnLaserMode(false);
+                    SetSpindleRpm(drillingRpm, true);
 
                     // Drill each of holes
                     for (int j = 0; j < ourHolesByTool[i].Count; j++)
@@ -842,7 +885,7 @@ namespace PCBProduction3
                     }
 
                     // Stop spindle
-                    SetSpindleRpm(0);
+                    SetSpindleRpm(0, true);
 
                     // Next Tool
                     i++;
@@ -896,7 +939,7 @@ namespace PCBProduction3
                 }
 
                 // Запускаем шпиндель
-                SetSpindleRpm(cuttingRpm);
+                SetSpindleRpm(cuttingRpm, true);
 
                 // Основные резы
                 float cuttingProgress = 0.0f;
@@ -970,7 +1013,7 @@ namespace PCBProduction3
                         }
                         else
                         {
-                            SetSpindleRpm(0);
+                            SetSpindleRpm(0, true);
                             throw new Exception("Неверный рез.");
                         }
                     }
@@ -981,7 +1024,7 @@ namespace PCBProduction3
                     // Совершена отмена?
                     if (shouldCancelOp)
                     {
-                        SetSpindleRpm(0);
+                        SetSpindleRpm(0, true);
                         throw new Exception("Произведена отмена.");
                     }
 
@@ -996,14 +1039,14 @@ namespace PCBProduction3
                     }
                     else
                     {
-                        SetSpindleRpm(0);
+                        SetSpindleRpm(0, true);
                         throw new Exception("Неверный gap.");
                     }
 
                     // Совершена отмена?
                     if (shouldCancelOp)
                     {
-                        SetSpindleRpm(0);
+                        SetSpindleRpm(0, true);
                         throw new Exception("Операция отменена.");
                     }
                 }
@@ -1057,7 +1100,7 @@ namespace PCBProduction3
                 }
 
                 // Останавливаем шпиндель
-                SetSpindleRpm(0);
+                SetSpindleRpm(0, true);
 
                 // Поднимаемся на высоту probe
                 MoveToAbsolutePositionAndWaitForCompletion(false, null, null, probeZMm, -1.0f);
@@ -1139,7 +1182,7 @@ namespace PCBProduction3
             return true;
         }
 
-        private void DoTransformProcess(bool depanelize)
+        private void DoTransformProcess(int transformProcessType)
         {
             try
             {
@@ -1151,28 +1194,65 @@ namespace PCBProduction3
                 StateChanged.Invoke(this, new EventArgs());
 
                 // Проверка калибровки
-                if (GetCamToToolDistX() == 0.0f || GetCamToToolDistY() == 0.0f)
+                if (transformProcessType <= 1)
                 {
-                    throw new Exception("Смещение камера-инструмент не откалибровано.");
+                    if (GetCamToToolDistX() == 0.0f || GetCamToToolDistY() == 0.0f)
+                    {
+                        throw new Exception("Смещение камера-инструмент не откалибровано.");
+                    }
+                } else
+                {
+                    if (GetCamToLaserDistX() == 0.0f || GetCamToLaserDistY() == 0.0f)
+                    {
+                        throw new Exception("Смещение камера-инструмент не откалибровано.");
+                    }
+                }
+                if (transformProcessType < 0 || transformProcessType > 3)
+                {
+                    throw new Exception("Неверный тип процесса.");
+                }
+                if (transformProcessType == 1 && contoursToDepanelizeMm.Count <= 0)
+                {
+                    throw new Exception("Нет посчитанных контуров для выполнения депанелизации, проверьте Gerber.");
+                }
+                else if (transformProcessType == 2 && contoursToCureSilkscreenTop.Count <= 0)
+                {
+                    throw new Exception("Нет посчитанных контуров для отверждения шелкографии top, проверьте Gerber.");
+                }
+                else if (transformProcessType == 3 && contoursToCureSilkscreenBottom.Count <= 0)
+                {
+                    throw new Exception("Нет посчитанных контуров для отверждения шелкографии bottom, проверьте Gerber.");
                 }
 
                 // Получить TL угол
                 int res = 0;
                 float panelWidthMm = MainForm.workImagePhysWidthMm + (MainForm.spaceOuterMm + MainForm.holderHolesIndentMm) * 2f;
                 float panelHeightMm = MainForm.workImagePhysHeightMm + (MainForm.spaceOuterMm + MainForm.holderHolesIndentMm) * 2f;
-                Vector2 tlDefaultCamLoc = new Vector2(((maxTravelMmX - panelWidthMm) / 2.0f) + GetCamToToolDistX(), ((maxTravelMmY - panelHeightMm) / 2.0f) + GetCamToToolDistY());
-                if (depanelize)
+                Vector2 tlDefaultCamLoc = Vector2.Zero;
+                tlDefaultCamLoc = new Vector2(((maxTravelMmX - panelWidthMm) / 2.0f) + GetCamToToolDistX(), ((maxTravelMmY - panelHeightMm) / 2.0f) + GetCamToToolDistY());
+                if (transformProcessType == 0)
                 {
                     MoveToAbsolutePositionAndWaitForCompletion(false, tlDefaultCamLoc.X, tlDefaultCamLoc.Y, toolChangeZMm, -1.0f);
-                    res = AskUserForInput("Установите фрезу " + cuttingToolDiameterMm.ToString("0.0") + " мм и убедитесь что панель лежит стороной TOP кверху, проект " + MainForm.gerberFilesDir + " и лежит правильным углом (TopLeft->TopLeft станка).", new List<string> { "Да", "Нет" }, 2, false, false, false);
+                    res = AskUserForInput("Подключите шпиндель, установите сверло любого диаметра и убедитесь что панель лежит стороной TOP кверху, проект " + MainForm.gerberFilesDir + " и лежит правильным углом (TopLeft->TopLeft станка).", new List<string> { "Да", "Нет" }, 2, false, false, false);
                     if (res > 0)
                     {
                         throw new Exception("Операция отменена.");
                     }
-                } else
+                }
+                else if (transformProcessType == 1)
                 {
                     MoveToAbsolutePositionAndWaitForCompletion(false, tlDefaultCamLoc.X, tlDefaultCamLoc.Y, toolChangeZMm, -1.0f);
-                    res = AskUserForInput("Установите сверло любого диаметра и убедитесь что панель лежит стороной TOP кверху, проект " + MainForm.gerberFilesDir + " и лежит правильным углом (TopLeft->TopLeft станка).", new List<string> { "Да", "Нет" }, 2, false, false, false);
+                    res = AskUserForInput("Подключите шпиндель, установите фрезу " + cuttingToolDiameterMm.ToString("0.0") + " мм и убедитесь что панель лежит стороной TOP кверху, проект " + MainForm.gerberFilesDir + " и лежит правильным углом (TopLeft->TopLeft станка).", new List<string> { "Да", "Нет" }, 2, false, false, false);
+                    if (res > 0)
+                    {
+                        throw new Exception("Операция отменена.");
+                    }
+                }
+                else
+                {
+                    MoveToAbsolutePositionAndWaitForCompletion(false, tlDefaultCamLoc.X, tlDefaultCamLoc.Y, laserZInFocusMm, -1.0f);
+                    String side = (transformProcessType == 2) ? "TOP" : "BOTTOM";
+                    res = AskUserForInput("Убедитесь что краска присутствует, мокра, панель лежит стороной " + side + " кверху, что лазер достаточно высоко и позволяет снизиться до Z = " + probeZMm.ToString("#.#") + " мм, а также что лазер подключен.", new List<string> { "Да", "Нет" }, 2, false, false, false);
                     if (res > 0)
                     {
                         throw new Exception("Операция отменена.");
@@ -1184,7 +1264,13 @@ namespace PCBProduction3
                 {
                     throw new Exception("Операция отменена.");
                 }
-                dCornerTLMm = new Vector2(GetAbsXMm() - GetCamToToolDistX(), GetAbsYMm() - GetCamToToolDistY());
+                if (transformProcessType <= 1)
+                {
+                    dCornerTLMm = new Vector2(GetAbsXMm() - GetCamToToolDistX(), GetAbsYMm() - GetCamToToolDistY());
+                } else
+                {
+                    dCornerTLMm = new Vector2(GetAbsXMm() - GetCamToLaserDistX(), GetAbsYMm() - GetCamToLaserDistY());
+                }
 
                 // Получить TR угол
                 Vector2 trDefaultCamLoc = new Vector2(GetAbsXMm() + MainForm.workImagePhysWidthMm + MainForm.holderHolesIndentMm + MainForm.spaceOuterMm, GetAbsYMm());
@@ -1194,7 +1280,13 @@ namespace PCBProduction3
                 {
                     throw new Exception("Операция отменена.");
                 }
-                dCornerTRMm = new Vector2(GetAbsXMm() - GetCamToToolDistX(), GetAbsYMm() - GetCamToToolDistY());
+                if (transformProcessType <= 1)
+                {
+                    dCornerTRMm = new Vector2(GetAbsXMm() - GetCamToToolDistX(), GetAbsYMm() - GetCamToToolDistY());
+                } else
+                {
+                    dCornerTRMm = new Vector2(GetAbsXMm() - GetCamToLaserDistX(), GetAbsYMm() - GetCamToLaserDistY());
+                }
 
                 // Check
                 if (!PanelCheck())
@@ -1203,47 +1295,92 @@ namespace PCBProduction3
                 }
 
                 // Перемещаемся в начало панели
-                MoveToAbsolutePositionAndWaitForCompletion(false, dCornerTLMm.X, dCornerTLMm.Y, probeZMm, -1.0f);
+                MoveToAbsolutePositionAndWaitForCompletion(false, dCornerTLMm.X, dCornerTLMm.Y, (transformProcessType <= 1) ? probeZMm : laserZInFocusMm, -1.0f);
 
                 // Ставим Z
-                res = AskUserForInput("Переместитесь по Z так, чтобы сверло/фреза отступала от заготовки примерно на 1-1.5 мм. Это будет безопасная высота. Рабочая будет на " + epDepthMm.ToString("0.0") + " мм ниже (константа).", new List<string> { "Готово", "Отмена" }, 2, false, true, false);
-                if (res > 0)
+                if (transformProcessType <= 1)
                 {
-                    throw new Exception("Операция отменена.");
+                    res = AskUserForInput("Переместитесь по Z так, чтобы сверло/фреза отступала от заготовки примерно на 1-1.5 мм. Это будет безопасная высота. Рабочая будет на " + epDepthMm.ToString("0.0") + " мм ниже (константа).", new List<string> { "Готово", "Отмена" }, 2, false, true, false);
+                    if (res > 0)
+                    {
+                        throw new Exception("Операция отменена.");
+                    }
+                } else
+                {
+                    res = AskUserForInput("Настройте фокус лазера, включая и выключая его кнопкой в панели в левом-нижнем углу.", new List<string> { "Готово", "Отмена" }, 2, false, false, true);
+                    if (res > 0)
+                    {
+                        throw new Exception("Операция отменена.");
+                    }
                 }
                 float safeZMm = GetAbsZMm();
                 float workZMm = GetAbsZMm() - epDepthMm;
+                if (transformProcessType == 2 || transformProcessType == 3)
+                {
+                    safeZMm = laserZInFocusMm;
+                    workZMm = laserZInFocusMm;
+                    MoveToAbsolutePositionAndWaitForCompletion(false, null, null, laserZInFocusMm, -1.0f);
+                }
 
                 // Perform Op
-                if (depanelize)
+                if (transformProcessType > 0)
                 {
                     // Cut
-                    if (contoursToDepanelizeMm.Count <= 0)
+                    if (transformProcessType == 1 && contoursToDepanelizeMm.Count <= 0)
                     {
                         throw new Exception("Нет посчитанных контуров для выполнения депанелизации, проверьте Gerber.");
+                    } else if (transformProcessType == 2 && contoursToCureSilkscreenTop.Count <= 0)
+                    {
+                        throw new Exception("Нет посчитанных контуров для отверждения шелкографии top, проверьте Gerber.");
+                    } else if (transformProcessType == 3 && contoursToCureSilkscreenBottom.Count <= 0)
+                    {
+                        throw new Exception("Нет посчитанных контуров для отверждения шелкографии bottom, проверьте Gerber.");
                     }
 
-                    // Запускаем шпиндель и ждем раскрутки
-                    SetSpindleRpm(cuttingRpm);
+                    // Запускаем шпиндель (если нужно) и ждем раскрутки
+                    TurnLaserMode(transformProcessType == 2 || transformProcessType == 3);
+                    if (transformProcessType == 0)
+                    {
+                        SetSpindleRpm(cuttingRpm, true);
+                    }
 
                     // Цикл
-                    int totalPoints = contoursToDepanelizeMm.Sum((e) => e.Length);
-                    int processedPoints = 0;
-                    for (int i = 0; i < contoursToDepanelizeMm.Count; i++)
+                    List<PointF[]> contoursToWorkWith = contoursToDepanelizeMm;
+                    if (transformProcessType == 2)
                     {
-                        for (int j = 0; j < contoursToDepanelizeMm[i].Length; j++)
+                        contoursToWorkWith = contoursToCureSilkscreenTop;
+                    } else if (transformProcessType == 3)
+                    {
+                        contoursToWorkWith = contoursToCureSilkscreenBottom;
+                    }
+                    int totalPoints = contoursToWorkWith.Sum((e) => e.Length);
+                    int processedPoints = 0;
+                    for (int i = 0; i < contoursToWorkWith.Count; i++)
+                    {
+                        int millisForThisContour = 0;
+                        for (int j = 0; j < contoursToWorkWith[i].Length; j++)
                         {
                             // Компенсировать криво лежащую на рабочем поле панель
-                            Vector2 tgtP = PanelCoordToWorkAreaCoord(new Vector2(contoursToDepanelizeMm[i][j].X, contoursToDepanelizeMm[i][j].Y));
+                            Vector2 tgtP = PanelCoordToWorkAreaCoord(new Vector2(contoursToWorkWith[i][j].X, contoursToWorkWith[i][j].Y));
 
                             // Переместиться в эту точку
-                            MoveToAbsolutePositionAndWaitForCompletion((j > 0), tgtP.X, tgtP.Y, null, (j > 0) ? cuttingRateMmPerMin : -1.0f);
+                            if (transformProcessType == 1 || j <= 0)
+                            {
+                                MoveToAbsolutePositionAndWaitForCompletion((j > 0), tgtP.X, tgtP.Y, null, (j > 0) ? cuttingRateMmPerMin : -1.0f);
+                            } else
+                            {
+                                millisForThisContour += MoveToAbsolutePositionAsync((j > 0), tgtP.X, tgtP.Y, null, (j > 0) ? laserRateMmPerMin : -1.0f);
+                            }
 
                             // Первая?
-                            if (j == 0)
+                            if (j == 0 && transformProcessType == 1)
                             {
                                 // Опустить шпиндель
                                 MoveToAbsolutePositionAndWaitForCompletion(true, null, null, workZMm, zSinkRateBigMmPerMin);
+                            } else if (j == 0 && transformProcessType > 1)
+                            {
+                                // Включить лазер
+                                SetLaserPower(laserPower);
                             }
 
                             // Прогресс и отмена
@@ -1257,7 +1394,17 @@ namespace PCBProduction3
                         }
 
                         // Контур завершен, поднять шпиндель
-                        MoveToAbsolutePositionAndWaitForCompletion(true, null, null, safeZMm, zRetractRateBigMmPerMin);
+                        if (transformProcessType == 1)
+                        {
+                            MoveToAbsolutePositionAndWaitForCompletion(true, null, null, safeZMm, zRetractRateBigMmPerMin);
+                        } else
+                        {
+                            // Выключить лазер
+                            SetLaserPower(0);
+
+                            // Подождать завершения всех движений по этому контуру
+                            Thread.Sleep(millisForThisContour);
+                        }
 
                         // Отмена
                         if (shouldCancelOp)
@@ -1266,12 +1413,24 @@ namespace PCBProduction3
                         }
                     }
 
-                    // Останавливаем шпиндель
-                    SetSpindleRpm(0);
+                    // Останавливаем шпиндель или выключаем лазер
+                    if (transformProcessType == 1)
+                    {
+                        SetSpindleRpm(0, true);
+                    } else
+                    {
+                        SetLaserPower(0);
+                    }
 
                     // Поднимаемся на высоту смены инструмента и центр рабочего поля
-                    MoveToAbsolutePositionAndWaitForCompletion(false, null, null, probeZMm, -1.0f);
-                    MoveToAbsolutePositionAndWaitForCompletion(false, maxTravelMmX / 2.0f, maxTravelMmY / 2.0f, toolChangeZMm, -1.0f);
+                    if (transformProcessType == 1)
+                    {
+                        MoveToAbsolutePositionAndWaitForCompletion(false, null, null, probeZMm, -1.0f);
+                        MoveToAbsolutePositionAndWaitForCompletion(false, maxTravelMmX / 2.0f, maxTravelMmY / 2.0f, toolChangeZMm, -1.0f);
+                    } else
+                    {
+                        MoveToAbsolutePositionAndWaitForCompletion(false, maxTravelMmX / 2.0f, maxTravelMmY / 2.0f, laserZInFocusMm, -1.0f);
+                    }
                 } else
                 {
                     // Drill
@@ -1308,7 +1467,8 @@ namespace PCBProduction3
                         MoveToAbsolutePositionAndWaitForCompletion(false, null, null, probeZMm, -1.0f);
 
                         // Start spindle
-                        SetSpindleRpm(drillingRpm);
+                        TurnLaserMode(false);
+                        SetSpindleRpm(drillingRpm, true);
 
                         // Drill each of holes
                         for (int j = 0; j < ourHolesByTool[i].Count; j++)
@@ -1339,7 +1499,7 @@ namespace PCBProduction3
                         }
 
                         // Stop spindle
-                        SetSpindleRpm(0);
+                        SetSpindleRpm(0, true);
 
                         // Next Tool
                         i++;
@@ -1399,7 +1559,7 @@ namespace PCBProduction3
             workThread?.Start();
         }
 
-        public void StartTransformProcess(bool depanelize)
+        public void StartTransformProcess(int processType)
         {
             if (!IsConnected() || IsFault())
             {
@@ -1409,10 +1569,14 @@ namespace PCBProduction3
             {
                 throw new Exception("Станок занят другим процессом или активен шпиндель, действие недоступно.");
             }
+            if (processType < 0 || processType > 3)
+            {
+                throw new Exception("Неверный тип процесса.");
+            }
             shouldCancelOp = false;
             workThread = new Thread(new ThreadStart(delegate
             {
-                DoTransformProcess(depanelize);
+                DoTransformProcess(processType);
             }));
             workThread?.Start();
         }

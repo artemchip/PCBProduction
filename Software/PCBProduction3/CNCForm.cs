@@ -129,6 +129,7 @@ namespace PCBProduction3
                 bool enableMovementButtonsXY = ourMachine.ShouldEnableUIMoveXY();
                 bool enableMovementButtonsZ = ourMachine.ShouldEnableUIMoveZ();
                 btnSpindle.Enabled = ourMachine.ShouldEnableSpindleToggleBtn();
+                tbSpindleSpeed.Enabled = connectedAndNotFault && ourMachine.CanAdjustSpindleSpeed();
                 btnXNeg.Enabled = enableMovementButtonsXY;
                 btnYNeg.Enabled = enableMovementButtonsXY;
                 btnZNeg.Enabled = enableMovementButtonsZ;
@@ -177,7 +178,8 @@ namespace PCBProduction3
 
                 // Calibration
                 rbCalSteps.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask();
-                rbCalCamOffset.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask();
+                rbCalCamOffset1.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask();
+                rbCalCamOffset2.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask();
                 btnCalib.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask();
                 if (curUserInput?.Type == 0 || curUserInput?.Type == CNCGeneralMachine.RESERVED_TYPE)
                 {
@@ -276,6 +278,8 @@ namespace PCBProduction3
                 pbTransforming.Value = (ourMachine.IsTransformPending()) ? ourMachine.GetTransformProgressPercent() : 0;
                 rbDrill.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask() && ourMachine.IsCalibrated();
                 rbDepanelize.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask() && ourMachine.IsCalibrated();
+                rbCureSilkscreenTop.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask() && ourMachine.IsCalibrated();
+                rbCureSilkscreenBottom.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask() && ourMachine.IsCalibrated();
                 if (curUserInput?.Type == 2 || curUserInput?.Type == CNCGeneralMachine.RESERVED_TYPE)
                 {
                     lblTInstr.Text = curUserInput!.Text;
@@ -364,7 +368,8 @@ namespace PCBProduction3
         {
             try
             {
-                ourMachine.ToggleSpindleFromUI();
+                ourMachine.ToggleSpindleFromUI(tbSpindleSpeed.Value);
+                UpdateUIState();
             }
             catch (Exception ex)
             {
@@ -524,7 +529,7 @@ namespace PCBProduction3
         private void btnCalib_Click(object sender, EventArgs e)
         {
             // Уже откалибровано?
-            if ((ourMachine.IsMotionStepCalibrated() && rbCalSteps.Checked) || (ourMachine.IsCamOffsetCalibrated() && rbCalCamOffset.Checked))
+            if ((ourMachine.IsMotionStepCalibrated() && rbCalSteps.Checked) || (ourMachine.IsCamOffset1Calibrated() && rbCalCamOffset1.Checked) || (ourMachine.IsCamOffset2Calibrated() && rbCalCamOffset2.Checked))
             {
                 if (MessageBox.Show(this, "Ваш станок уже откалиброван, точно повторить процесс?", "PCBProduction3", MessageBoxButtons.YesNo) == DialogResult.No)
                 {
@@ -532,20 +537,31 @@ namespace PCBProduction3
                 }
             }
 
-            // Z Safe
-            if (MessageBox.Show(this, "В константах программы верно указан безопасный Z (calibZMm)?", "PCBProduction3", MessageBoxButtons.YesNo) == DialogResult.No)
-            {
-                return;
-            }
-
             // Делаем
             try
             {
-                if (!rbCalSteps.Checked && !rbCalCamOffset.Checked)
+                if (rbCalSteps.Checked)
+                {
+                    if (MessageBox.Show(this, "В константах программы верно указан безопасный Z (calibZMm)?", "PCBProduction3", MessageBoxButtons.YesNo) == DialogResult.No)
+                    {
+                        return;
+                    }
+                    ourMachine.StartCalibrationProcess(2, 0);
+                } else if (rbCalCamOffset1.Checked)
+                {
+                    if (MessageBox.Show(this, "В константах программы верно указан безопасный Z (calibZMm)?", "PCBProduction3", MessageBoxButtons.YesNo) == DialogResult.No)
+                    {
+                        return;
+                    }
+                    ourMachine.StartCalibrationProcess(1, 0);
+                }
+                else if (rbCalCamOffset2.Checked)
+                {
+                    ourMachine.StartCalibrationProcess(2, 0);
+                } else
                 {
                     throw new Exception("Неверно указано что калибровать.");
                 }
-                ourMachine.StartCalibrationProcess(rbCalCamOffset.Checked ? 1 : 0, 0);
             }
             catch (Exception ex)
             {
@@ -657,11 +673,34 @@ namespace PCBProduction3
             {
                 if (((int)btnTransform.Tag!) == 1)
                 {
+                    // Тип процесса
+                    int processType = -1;
+                    if (rbDrill.Checked)
+                    {
+                        processType = 0;
+                    }
+                    else if (rbDepanelize.Checked)
+                    {
+                        processType = 1;
+                    }
+                    else if (rbCureSilkscreenTop.Checked)
+                    {
+                        processType = 2;
+                    }
+                    else if (rbCureSilkscreenBottom.Checked)
+                    {
+                        processType = 3;
+                    }
+                    else
+                    {
+                        MessageBox.Show(this, "Выбран непонятный процесс.");
+                    }
+
                     // Начать, оценить время
-                    float timeSec = ourMachine.GetTransformTimeSeconds(rbDepanelize.Checked);
+                    float timeSec = ourMachine.GetTransformTimeSeconds(processType);
                     if (MessageBox.Show(this, "Начать преображение панели? Процесс займет около " + (timeSec / 60f).ToString("0") + " минут.", "PCBProduction3", MessageBoxButtons.YesNo) == DialogResult.Yes)
                     {
-                        ourMachine.StartTransformProcess(rbDepanelize.Checked);
+                        ourMachine.StartTransformProcess(processType);
                     }
                 }
                 else if (((int)btnTransform.Tag!) == 2)
@@ -695,6 +734,27 @@ namespace PCBProduction3
 
         private void btnDepanelizePreview_Click(object sender, EventArgs e)
         {
+            int transformProcessType = -1;
+            if (rbDrill.Checked)
+            {
+                transformProcessType = 0;
+            }
+            else if (rbDepanelize.Checked)
+            {
+                transformProcessType = 1;
+            }
+            else if (rbCureSilkscreenTop.Checked)
+            {
+                transformProcessType = 2;
+            }
+            else if (rbCureSilkscreenBottom.Checked)
+            {
+                transformProcessType = 3;
+            }
+            else
+            {
+                MessageBox.Show(this, "Выбран непонятный процесс.");
+            }
             try
             {
                 pbDepanelizePreview.Image?.Dispose();
@@ -702,9 +762,25 @@ namespace PCBProduction3
             catch { }
             try
             {
+                float[][] mxRed = new float[][]
+                {
+            new float[] { 1, 0, 0, 0, 0 },
+            new float[] { 0, 0, 0, 0, 0 },
+            new float[] { 0, 0, 0, 0, 0 },
+            new float[] { 0, 0, 0, 0.3f, 0 },
+            new float[] { 0, 0, 0, 0, 0 }
+                };
+                float[][] mxBlue = new float[][]
+                {
+            new float[] { 0, 0, 0, 0, 0 },
+            new float[] { 0, 0, 0, 0, 0 },
+            new float[] { 0, 0, 1, 0, 0 },
+            new float[] { 0, 0, 0, 0.3f, 0 },
+            new float[] { 0, 0, 0, 0, 0 }
+                };
                 ELayer topLayer = GerberFolderParser.loadedLayers.Where((e) => e.isCopperOuter).FirstOrDefault();
                 ELayer bottomLayer = GerberFolderParser.loadedLayers.Where((e) => e.isCopperOuter).LastOrDefault();
-                Bitmap bmpTool = ourMachine.GetGreenDepanelizeBitmap(600);
+                Bitmap bmpTool = ourMachine.GetGreenDepanelizeBitmap(600, transformProcessType);
                 using (Bitmap bmpTop = GerberFolderParser.DrawPanelFromGbrLayerFile(topLayer.fileName, GerberFolderParser.gbrProfileFile, false, false, "", 600))
                 {
                     using (Bitmap bmpBottom = GerberFolderParser.DrawPanelFromGbrLayerFile(bottomLayer.fileName, GerberFolderParser.gbrProfileFile, false, false, "", 600))
@@ -713,29 +789,13 @@ namespace PCBProduction3
                         {
                             using (var attributes = new ImageAttributes())
                             {
-                                float[][] mxRed = new float[][]
-                                {
-                            new float[] { 1, 0, 0, 0, 0 },
-                            new float[] { 0, 0, 0, 0, 0 },
-                            new float[] { 0, 0, 0, 0, 0 },
-                            new float[] { 0, 0, 0, 0.3f, 0 },
-                            new float[] { 0, 0, 0, 0, 0 }
-                                };
-                                attributes.SetColorMatrix(new ColorMatrix(mxRed));
-                                g.DrawImage(bmpTop, new Rectangle(new Point(0, 0), bmpTool.Size), 0f, 0f, bmpTop.Width, bmpTop.Height, GraphicsUnit.Pixel, attributes);
+                                attributes.SetColorMatrix(new ColorMatrix((transformProcessType == 3) ? mxBlue : mxRed));
+                                g.DrawImage((transformProcessType == 3) ? bmpBottom : bmpTop, new Rectangle(new Point(0, 0), bmpTool.Size), 0f, 0f, bmpTop.Width, bmpTop.Height, GraphicsUnit.Pixel, attributes);
                             }
                             using (var attributes = new ImageAttributes())
                             {
-                                float[][] mxBlue = new float[][]
-                                {
-                            new float[] { 0, 0, 0, 0, 0 },
-                            new float[] { 0, 0, 0, 0, 0 },
-                            new float[] { 0, 0, 1, 0, 0 },
-                            new float[] { 0, 0, 0, 0.3f, 0 },
-                            new float[] { 0, 0, 0, 0, 0 }
-                                };
-                                attributes.SetColorMatrix(new ColorMatrix(mxBlue));
-                                g.DrawImage(bmpBottom, new Rectangle(new Point(0, 0), bmpTool.Size), 0f, 0f, bmpTop.Width, bmpTop.Height, GraphicsUnit.Pixel, attributes);
+                                attributes.SetColorMatrix(new ColorMatrix((transformProcessType == 3) ? mxRed : mxBlue));
+                                g.DrawImage((transformProcessType == 3) ? bmpTop : bmpBottom, new Rectangle(new Point(0, 0), bmpTool.Size), 0f, 0f, bmpTop.Width, bmpTop.Height, GraphicsUnit.Pixel, attributes);
                             }
                         }
                     }
@@ -756,6 +816,7 @@ namespace PCBProduction3
             }
             catch { }
             ourMachine.ProcessIndividualCutouts(GerberFolderParser.gbrProfileFile, cbInvertX.Checked, cbInvertY.Checked);
+            ourMachine.ProcessSilkscreen(GerberFolderParser.gbrProfileFile, cbInvertX.Checked, cbInvertY.Checked);
         }
 
         private void cbInvertY_CheckedChanged(object sender, EventArgs e)
@@ -766,6 +827,7 @@ namespace PCBProduction3
             }
             catch { }
             ourMachine.ProcessIndividualCutouts(GerberFolderParser.gbrProfileFile, cbInvertX.Checked, cbInvertY.Checked);
+            ourMachine.ProcessSilkscreen(GerberFolderParser.gbrProfileFile, cbInvertX.Checked, cbInvertY.Checked);
         }
     }
 }

@@ -670,7 +670,7 @@ namespace PCBProduction3
         private void btnCalib_Click(object sender, EventArgs e)
         {
             // Уже откалибровано?
-            if ((ourMachine.IsMotionStepCalibrated() && rbCalSteps.Checked) || (ourMachine.IsCamOffsetCalibrated() && rbCalCamOffset.Checked) || (ourMachine.IsPNPCalibrated() && rbCalCAxis.Checked))
+            if ((ourMachine.IsMotionStepCalibrated() && rbCalSteps.Checked) || (ourMachine.IsCamOffset1Calibrated() && rbCalCamOffset.Checked) || (ourMachine.IsPNPCalibrated() && rbCalCAxis.Checked))
             {
                 if (MessageBox.Show(this, "Ваш станок уже откалиброван, точно повторить процесс?", "PCBProduction3", MessageBoxButtons.YesNo) == DialogResult.No)
                 {
@@ -697,7 +697,7 @@ namespace PCBProduction3
                 }
                 else if (rbCalCAxis.Checked)
                 {
-                    ourMachine.StartCalibrationProcess(2, (int)nudCCalSteps.Value);
+                    ourMachine.StartCalibrationProcess(3, (int)nudCCalSteps.Value);
                 }
                 else
                 {

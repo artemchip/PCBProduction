@@ -69,7 +69,8 @@
             noConnectionTab = new TabPage();
             lblAlarmStatus = new Label();
             calibTab = new TabPage();
-            rbCalCamOffset = new RadioButton();
+            rbCalCamOffset2 = new RadioButton();
+            rbCalCamOffset1 = new RadioButton();
             rbCalSteps = new RadioButton();
             lblCalibInstr3 = new Label();
             lblCalibInstr4 = new Label();
@@ -100,6 +101,8 @@
             rbPanelPos1 = new RadioButton();
             lblQInstr1 = new Label();
             existingPanelTab = new TabPage();
+            rbCureSilkscreenBottom = new RadioButton();
+            rbCureSilkscreenTop = new RadioButton();
             cbInvertY = new CheckBox();
             cbInvertX = new CheckBox();
             pbDepanelizePreview = new PictureBox();
@@ -114,6 +117,7 @@
             rbDepanelize = new RadioButton();
             rbDrill = new RadioButton();
             lblTInstr1 = new Label();
+            tbSpindleSpeed = new TrackBar();
             ((System.ComponentModel.ISupportInitialize)nudFOVYTo).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nudFOVYFrom).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nudFOVXTo).BeginInit();
@@ -136,6 +140,7 @@
             existingPanelTab.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbDepanelizePreview).BeginInit();
             gbTransformUserInput.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)tbSpindleSpeed).BeginInit();
             SuspendLayout();
             // 
             // nudFOVYTo
@@ -450,10 +455,10 @@
             // 
             // tbZoom
             // 
-            tbZoom.Location = new Point(246, 486);
+            tbZoom.Location = new Point(269, 426);
             tbZoom.Minimum = 1;
             tbZoom.Name = "tbZoom";
-            tbZoom.Size = new Size(407, 45);
+            tbZoom.Size = new Size(384, 45);
             tbZoom.TabIndex = 91;
             tbZoom.TickFrequency = 10;
             tbZoom.TickStyle = TickStyle.Both;
@@ -529,7 +534,8 @@
             // 
             // calibTab
             // 
-            calibTab.Controls.Add(rbCalCamOffset);
+            calibTab.Controls.Add(rbCalCamOffset2);
+            calibTab.Controls.Add(rbCalCamOffset1);
             calibTab.Controls.Add(rbCalSteps);
             calibTab.Controls.Add(lblCalibInstr3);
             calibTab.Controls.Add(lblCalibInstr4);
@@ -546,16 +552,27 @@
             calibTab.Text = "Калибровка";
             calibTab.UseVisualStyleBackColor = true;
             // 
-            // rbCalCamOffset
+            // rbCalCamOffset2
             // 
-            rbCalCamOffset.AutoSize = true;
-            rbCalCamOffset.Location = new Point(196, 177);
-            rbCalCamOffset.Name = "rbCalCamOffset";
-            rbCalCamOffset.Size = new Size(236, 19);
-            rbCalCamOffset.TabIndex = 9;
-            rbCalCamOffset.TabStop = true;
-            rbCalCamOffset.Text = "Смещение от камеры до инструмента";
-            rbCalCamOffset.UseVisualStyleBackColor = true;
+            rbCalCamOffset2.AutoSize = true;
+            rbCalCamOffset2.Location = new Point(392, 177);
+            rbCalCamOffset2.Name = "rbCalCamOffset2";
+            rbCalCamOffset2.Size = new Size(164, 19);
+            rbCalCamOffset2.TabIndex = 10;
+            rbCalCamOffset2.TabStop = true;
+            rbCalCamOffset2.Text = "Смещение камера-лазер";
+            rbCalCamOffset2.UseVisualStyleBackColor = true;
+            // 
+            // rbCalCamOffset1
+            // 
+            rbCalCamOffset1.AutoSize = true;
+            rbCalCamOffset1.Location = new Point(196, 177);
+            rbCalCamOffset1.Name = "rbCalCamOffset1";
+            rbCalCamOffset1.Size = new Size(190, 19);
+            rbCalCamOffset1.TabIndex = 9;
+            rbCalCamOffset1.TabStop = true;
+            rbCalCamOffset1.Text = "Смещение камера-шпиндель";
+            rbCalCamOffset1.UseVisualStyleBackColor = true;
             // 
             // rbCalSteps
             // 
@@ -864,6 +881,8 @@
             // 
             // existingPanelTab
             // 
+            existingPanelTab.Controls.Add(rbCureSilkscreenBottom);
+            existingPanelTab.Controls.Add(rbCureSilkscreenTop);
             existingPanelTab.Controls.Add(cbInvertY);
             existingPanelTab.Controls.Add(cbInvertX);
             existingPanelTab.Controls.Add(pbDepanelizePreview);
@@ -881,10 +900,32 @@
             existingPanelTab.Text = "Работа с существующей панелью";
             existingPanelTab.UseVisualStyleBackColor = true;
             // 
+            // rbCureSilkscreenBottom
+            // 
+            rbCureSilkscreenBottom.AutoSize = true;
+            rbCureSilkscreenBottom.Location = new Point(242, 85);
+            rbCureSilkscreenBottom.Name = "rbCureSilkscreenBottom";
+            rbCureSilkscreenBottom.Size = new Size(334, 19);
+            rbCureSilkscreenBottom.TabIndex = 15;
+            rbCureSilkscreenBottom.TabStop = true;
+            rbCureSilkscreenBottom.Text = "Отверждение шелкографской краски лазером (bottom)";
+            rbCureSilkscreenBottom.UseVisualStyleBackColor = true;
+            // 
+            // rbCureSilkscreenTop
+            // 
+            rbCureSilkscreenTop.AutoSize = true;
+            rbCureSilkscreenTop.Location = new Point(242, 60);
+            rbCureSilkscreenTop.Name = "rbCureSilkscreenTop";
+            rbCureSilkscreenTop.Size = new Size(312, 19);
+            rbCureSilkscreenTop.TabIndex = 14;
+            rbCureSilkscreenTop.TabStop = true;
+            rbCureSilkscreenTop.Text = "Отверждение шелкографской краски лазером (top)";
+            rbCureSilkscreenTop.UseVisualStyleBackColor = true;
+            // 
             // cbInvertY
             // 
             cbInvertY.AutoSize = true;
-            cbInvertY.Location = new Point(401, 142);
+            cbInvertY.Location = new Point(510, 143);
             cbInvertY.Name = "cbInvertY";
             cbInvertY.Size = new Size(66, 19);
             cbInvertY.TabIndex = 13;
@@ -895,7 +936,7 @@
             // cbInvertX
             // 
             cbInvertX.AutoSize = true;
-            cbInvertX.Location = new Point(329, 143);
+            cbInvertX.Location = new Point(438, 143);
             cbInvertX.Name = "cbInvertX";
             cbInvertX.Size = new Size(66, 19);
             cbInvertX.TabIndex = 12;
@@ -905,7 +946,7 @@
             // 
             // pbDepanelizePreview
             // 
-            pbDepanelizePreview.Location = new Point(3, 254);
+            pbDepanelizePreview.Location = new Point(9, 254);
             pbDepanelizePreview.Name = "pbDepanelizePreview";
             pbDepanelizePreview.Size = new Size(390, 390);
             pbDepanelizePreview.SizeMode = PictureBoxSizeMode.StretchImage;
@@ -916,9 +957,9 @@
             // 
             btnDepanelizePreview.Location = new Point(159, 139);
             btnDepanelizePreview.Name = "btnDepanelizePreview";
-            btnDepanelizePreview.Size = new Size(164, 23);
+            btnDepanelizePreview.Size = new Size(250, 23);
             btnDepanelizePreview.TabIndex = 10;
-            btnDepanelizePreview.Text = "Превью депанелизации";
+            btnDepanelizePreview.Text = "Превью депанелизации/отверждения";
             btnDepanelizePreview.UseVisualStyleBackColor = true;
             btnDepanelizePreview.Click += btnDepanelizePreview_Click;
             // 
@@ -1024,11 +1065,26 @@
             lblTInstr1.TabIndex = 0;
             lblTInstr1.Text = resources.GetString("lblTInstr1.Text");
             // 
+            // tbSpindleSpeed
+            // 
+            tbSpindleSpeed.LargeChange = 250;
+            tbSpindleSpeed.Location = new Point(247, 486);
+            tbSpindleSpeed.Maximum = 10000;
+            tbSpindleSpeed.Minimum = 1000;
+            tbSpindleSpeed.Name = "tbSpindleSpeed";
+            tbSpindleSpeed.Size = new Size(406, 45);
+            tbSpindleSpeed.SmallChange = 250;
+            tbSpindleSpeed.TabIndex = 125;
+            tbSpindleSpeed.TickFrequency = 250;
+            tbSpindleSpeed.TickStyle = TickStyle.Both;
+            tbSpindleSpeed.Value = 4000;
+            // 
             // CNCForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1275, 697);
+            Controls.Add(tbSpindleSpeed);
             Controls.Add(procTabControl);
             Controls.Add(panel1);
             Controls.Add(nudFOVYTo);
@@ -1099,6 +1155,7 @@
             existingPanelTab.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pbDepanelizePreview).EndInit();
             gbTransformUserInput.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)tbSpindleSpeed).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -1184,11 +1241,15 @@
         private NumericUpDown nudDWorkpieceThicknessMm;
         private Label lblCalibInstr3;
         private RadioButton rbCalSteps;
-        private RadioButton rbCalCamOffset;
+        private RadioButton rbCalCamOffset1;
         private Button btnDepanelizePreview;
         private PictureBox pbDepanelizePreview;
         private CheckBox cbInvertY;
         private CheckBox cbInvertX;
         private CheckBox cbDrillPartialPCBs;
+        private RadioButton rbCureSilkscreenTop;
+        private RadioButton rbCureSilkscreenBottom;
+        private TrackBar tbSpindleSpeed;
+        private RadioButton rbCalCamOffset2;
     }
 }
