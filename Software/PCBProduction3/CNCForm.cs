@@ -546,7 +546,7 @@ namespace PCBProduction3
                     {
                         return;
                     }
-                    ourMachine.StartCalibrationProcess(2, 0);
+                    ourMachine.StartCalibrationProcess(0, 0);
                 } else if (rbCalCamOffset1.Checked)
                 {
                     if (MessageBox.Show(this, "В константах программы верно указан безопасный Z (calibZMm)?", "PCBProduction3", MessageBoxButtons.YesNo) == DialogResult.No)
