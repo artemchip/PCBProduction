@@ -1339,7 +1339,7 @@ namespace PCBProduction3
 
                     // Запускаем шпиндель (если нужно) и ждем раскрутки
                     TurnLaserMode(transformProcessType == 2 || transformProcessType == 3);
-                    if (transformProcessType == 0)
+                    if (transformProcessType == 1)
                     {
                         SetSpindleRpm(cuttingRpm, true);
                     }
