@@ -287,7 +287,7 @@ namespace PCBProduction3
             return resBmp;
         }
 
-        public unsafe static Bitmap AndOr(Bitmap imgA, Bitmap imgB, Bitmap imgC)
+        public unsafe static Bitmap AndOr(Bitmap imgA, Bitmap imgB, Bitmap imgC, bool invertSecond)
         {
             Bitmap resBmp = new Bitmap(imgA.Width, imgA.Height, PixelFormat.Format24bppRgb);
 
@@ -307,6 +307,10 @@ namespace PCBProduction3
                 byte b1 = imgStartPointerA[i];
                 byte b2 = imgStartPointerB[i];
                 byte b3 = imgStartPointerC[i];
+                if (invertSecond)
+                {
+                    b2 = (byte)(255 - b2);
+                }
                 imgStartPointerR[i] = (byte)((b1 & b2) | b3);
             }
 

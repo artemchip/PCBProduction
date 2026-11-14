@@ -196,19 +196,34 @@ namespace PCBProduction3
                 String clFName = Path.GetFileName(inputFile);
                 bool stencilMode = clFName.ToLower().Contains("solderpaste") || clFName.ToLower().EndsWith(".gtp") || clFName.ToLower().EndsWith(".gbp");
 
-                // Mask?
+                // Mask Or Silk?
                 bool maskMode = clFName.ToLower().Contains("soldermask") || clFName.ToLower().EndsWith(".gts") || clFName.ToLower().EndsWith(".gbs");
-                String maskCopperFile = "";
+                bool silkscreenMode = clFName.ToLower().Contains("silkscreen") || clFName.ToLower().EndsWith(".gto") || clFName.ToLower().EndsWith(".gbo");
+                String secondLayerFile = "";
                 if (maskMode)
                 {
                     List<ELayer> outerLoadedLayers = loadedLayers.Where((e) => e.isCopperOuter).ToList();
                     if (clFName.ToLower().EndsWith(".gts") || clFName.ToLower().Contains("top"))
                     {
-                        maskCopperFile = outerLoadedLayers[0].fileName;
+                        // Top Copper If Input Is Top Mask
+                        secondLayerFile = outerLoadedLayers[0].fileName;
                     }
                     else
                     {
-                        maskCopperFile = outerLoadedLayers[1].fileName;
+                        // Bottom Copper If Input Is Bottom Mask
+                        secondLayerFile = outerLoadedLayers[1].fileName;
+                    }
+                } else if (silkscreenMode)
+                {
+                    List<ELayer> maskLoadedLayers = loadedLayers.Where((e) => e.fileName.EndsWith(".gts") || e.fileName.EndsWith(".gbs") || e.fileName.Contains("soldermask")).ToList();
+                    if (clFName.ToLower().EndsWith(".gto") || clFName.ToLower().Contains("top"))
+                    {
+                        // Top Mask If Input Is Top Silk
+                        secondLayerFile = maskLoadedLayers.First((e) => Path.GetFileName(e.fileName).Contains("top") || e.fileName.EndsWith(".gts")).fileName;
+                    } else
+                    {
+                        // Bottom Mask If Input Is Bottom Silk
+                        secondLayerFile = maskLoadedLayers.First((e) => Path.GetFileName(e.fileName).Contains("bottom") || e.fileName.EndsWith(".gbs")).fileName;
                     }
                 }
 
@@ -291,13 +306,10 @@ namespace PCBProduction3
                     Bitmap rawLayerImg1 = new Bitmap((int)Math.Floor(2f * imWidth), (int)Math.Floor(2f * imHeight), System.Drawing.Imaging.PixelFormat.Format32bppArgb);
                     proj.FileInfo[0].Color = Color.White;
                     proj.FileInfo[0].IsVisible = true;
-                    if (maskMode)
-                    {
-                        proj.FileInfo[1].Color = Color.Transparent;
-                        proj.FileInfo[1].IsVisible = false;
-                        proj.FileInfo[2].Color = Color.Transparent;
-                        proj.FileInfo[2].IsVisible = false;
-                    }
+                    proj.FileInfo[1].Color = Color.Transparent;
+                    proj.FileInfo[1].IsVisible = false;
+                    proj.FileInfo[2].Color = Color.Transparent;
+                    proj.FileInfo[2].IsVisible = false;
                     proj.FileInfo[proj.FileInfo.Count - 1].Color = Color.Transparent;
                     if (proj.FileInfo.First().Image.Unit == GerberUnit.Inch)
                     {
@@ -370,9 +382,9 @@ namespace PCBProduction3
                 {
                     // Open Gerbers
                     gerberVS.OpenLayerFromFileName(proj, inputFile);
-                    if (maskMode)
+                    if (maskMode || silkscreenMode)
                     {
-                        gerberVS.OpenLayerFromFileName(proj, maskCopperFile);
+                        gerberVS.OpenLayerFromFileName(proj, secondLayerFile);
                         gerberVS.OpenLayerFromFileName(proj, gbrDrillFile);
                     }
                     gerberVS.OpenLayerFromFileName(proj, profileFile);
@@ -389,13 +401,13 @@ namespace PCBProduction3
                     // Render 1
                     using (Bitmap rawLayerImg1 = new Bitmap((int)Math.Floor(2f * imWidth), (int)Math.Floor(2f * imHeight), System.Drawing.Imaging.PixelFormat.Format32bppArgb))
                     {
-                        using (Bitmap rawLayerImg2 = new Bitmap((maskMode) ? (int)Math.Floor(2f * imWidth) : 1, (maskMode) ? (int)Math.Floor(2f * imHeight) : 1, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+                        using (Bitmap rawLayerImg2 = new Bitmap((maskMode || silkscreenMode) ? (int)Math.Floor(2f * imWidth) : 1, (maskMode || silkscreenMode) ? (int)Math.Floor(2f * imHeight) : 1, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
                         {
-                            using (Bitmap rawLayerImg3 = new Bitmap((maskMode) ? (int)Math.Floor(2f * imWidth) : 1, (maskMode) ? (int)Math.Floor(2f * imHeight) : 1, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+                            using (Bitmap rawLayerImg3 = new Bitmap((maskMode || silkscreenMode) ? (int)Math.Floor(2f * imWidth) : 1, (maskMode || silkscreenMode) ? (int)Math.Floor(2f * imHeight) : 1, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
                             {
                                 proj.FileInfo[0].Color = Color.White;
                                 proj.FileInfo[0].IsVisible = true;
-                                if (maskMode)
+                                if (maskMode || silkscreenMode)
                                 {
                                     proj.FileInfo[1].Color = Color.Transparent;
                                     proj.FileInfo[1].IsVisible = false;
@@ -427,7 +439,7 @@ namespace PCBProduction3
                                 }
 
                                 // Render 2
-                                if (maskMode)
+                                if (maskMode || silkscreenMode)
                                 {
                                     proj.FileInfo[0].Color = Color.Transparent;
                                     proj.FileInfo[0].IsVisible = false;
@@ -508,7 +520,7 @@ namespace PCBProduction3
                                 {
                                     dilationVal = -4;
                                 }
-                                layerImg = new Bitmap(Utils.Dilation((maskMode) ? Utils.AndOr(rawLayerImg1, rawLayerImg2, rawLayerImg3) : rawLayerImg1, dilationVal, shouldInvert), new Size((int)Math.Floor(imWidth), (int)Math.Floor(imHeight)));
+                                layerImg = new Bitmap(Utils.Dilation((maskMode || silkscreenMode) ? Utils.AndOr(rawLayerImg1, rawLayerImg2, rawLayerImg3, silkscreenMode) : rawLayerImg1, dilationVal, shouldInvert), new Size((int)Math.Floor(imWidth), (int)Math.Floor(imHeight)));
                                 if (proj.FileInfo.First().Image.Unit == GerberUnit.Inch)
                                 {
                                     layerImg.SetResolution(inkPrinterDpi, inkPrinterDpi);
