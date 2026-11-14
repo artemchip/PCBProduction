@@ -265,6 +265,7 @@ namespace PCBProduction3
                 btnDepanelizePreview.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask() && ourMachine.IsCalibrated();
                 cbInvertX.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask() && ourMachine.IsCalibrated();
                 cbInvertY.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask() && ourMachine.IsCalibrated();
+                cbCastellate.Enabled = connectedAndNotFault && !ourMachine.IsBusyWithLongTask() && ourMachine.IsCalibrated();
                 if (ourMachine.IsTransformPending())
                 {
                     btnTransform.Text = "Отмена";
@@ -547,7 +548,8 @@ namespace PCBProduction3
                         return;
                     }
                     ourMachine.StartCalibrationProcess(0, 0);
-                } else if (rbCalCamOffset1.Checked)
+                }
+                else if (rbCalCamOffset1.Checked)
                 {
                     if (MessageBox.Show(this, "В константах программы верно указан безопасный Z (calibZMm)?", "PCBProduction3", MessageBoxButtons.YesNo) == DialogResult.No)
                     {
@@ -558,7 +560,8 @@ namespace PCBProduction3
                 else if (rbCalCamOffset2.Checked)
                 {
                     ourMachine.StartCalibrationProcess(2, 0);
-                } else
+                }
+                else
                 {
                     throw new Exception("Неверно указано что калибровать.");
                 }
@@ -815,8 +818,8 @@ namespace PCBProduction3
                 pbDepanelizePreview.Image?.Dispose();
             }
             catch { }
-            ourMachine.ProcessIndividualCutouts(GerberFolderParser.gbrProfileFile, cbInvertX.Checked, cbInvertY.Checked);
-            ourMachine.ProcessSilkscreen(GerberFolderParser.gbrProfileFile, cbInvertX.Checked, cbInvertY.Checked);
+            ourMachine.ProcessIndividualCutouts(GerberFolderParser.gbrProfileFile, cbInvertX.Checked, cbInvertY.Checked, cbCastellate.Checked);
+            ourMachine.ProcessSilkscreen(GerberFolderParser.gbrProfileFile, cbInvertX.Checked, cbInvertY.Checked, cbCastellate.Checked);
         }
 
         private void cbInvertY_CheckedChanged(object sender, EventArgs e)
@@ -826,8 +829,19 @@ namespace PCBProduction3
                 pbDepanelizePreview.Image?.Dispose();
             }
             catch { }
-            ourMachine.ProcessIndividualCutouts(GerberFolderParser.gbrProfileFile, cbInvertX.Checked, cbInvertY.Checked);
-            ourMachine.ProcessSilkscreen(GerberFolderParser.gbrProfileFile, cbInvertX.Checked, cbInvertY.Checked);
+            ourMachine.ProcessIndividualCutouts(GerberFolderParser.gbrProfileFile, cbInvertX.Checked, cbInvertY.Checked, cbCastellate.Checked);
+            ourMachine.ProcessSilkscreen(GerberFolderParser.gbrProfileFile, cbInvertX.Checked, cbInvertY.Checked, cbCastellate.Checked);
+        }
+
+        private void cbCastellate_CheckedChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                pbDepanelizePreview.Image?.Dispose();
+            }
+            catch { }
+            ourMachine.ProcessIndividualCutouts(GerberFolderParser.gbrProfileFile, cbInvertX.Checked, cbInvertY.Checked, cbCastellate.Checked);
+            ourMachine.ProcessSilkscreen(GerberFolderParser.gbrProfileFile, cbInvertX.Checked, cbInvertY.Checked, cbCastellate.Checked);
         }
     }
 }

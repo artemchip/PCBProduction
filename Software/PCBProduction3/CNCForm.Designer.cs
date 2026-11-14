@@ -101,6 +101,7 @@
             rbPanelPos1 = new RadioButton();
             lblQInstr1 = new Label();
             existingPanelTab = new TabPage();
+            cbCastellate = new CheckBox();
             rbCureSilkscreenBottom = new RadioButton();
             rbCureSilkscreenTop = new RadioButton();
             cbInvertY = new CheckBox();
@@ -881,6 +882,7 @@
             // 
             // existingPanelTab
             // 
+            existingPanelTab.Controls.Add(cbCastellate);
             existingPanelTab.Controls.Add(rbCureSilkscreenBottom);
             existingPanelTab.Controls.Add(rbCureSilkscreenTop);
             existingPanelTab.Controls.Add(cbInvertY);
@@ -899,6 +901,17 @@
             existingPanelTab.TabIndex = 3;
             existingPanelTab.Text = "Работа с существующей панелью";
             existingPanelTab.UseVisualStyleBackColor = true;
+            // 
+            // cbCastellate
+            // 
+            cbCastellate.AutoSize = true;
+            cbCastellate.Location = new Point(502, 142);
+            cbCastellate.Name = "cbCastellate";
+            cbCastellate.Size = new Size(77, 19);
+            cbCastellate.TabIndex = 16;
+            cbCastellate.Text = "Castellate";
+            cbCastellate.UseVisualStyleBackColor = true;
+            cbCastellate.CheckedChanged += cbCastellate_CheckedChanged;
             // 
             // rbCureSilkscreenBottom
             // 
@@ -925,22 +938,22 @@
             // cbInvertY
             // 
             cbInvertY.AutoSize = true;
-            cbInvertY.Location = new Point(510, 143);
+            cbInvertY.Location = new Point(447, 142);
             cbInvertY.Name = "cbInvertY";
-            cbInvertY.Size = new Size(66, 19);
+            cbInvertY.Size = new Size(49, 19);
             cbInvertY.TabIndex = 13;
-            cbInvertY.Text = "Invert Y";
+            cbInvertY.Text = "InvY";
             cbInvertY.UseVisualStyleBackColor = true;
             cbInvertY.CheckedChanged += cbInvertY_CheckedChanged;
             // 
             // cbInvertX
             // 
             cbInvertX.AutoSize = true;
-            cbInvertX.Location = new Point(438, 143);
+            cbInvertX.Location = new Point(392, 143);
             cbInvertX.Name = "cbInvertX";
-            cbInvertX.Size = new Size(66, 19);
+            cbInvertX.Size = new Size(49, 19);
             cbInvertX.TabIndex = 12;
-            cbInvertX.Text = "Invert X";
+            cbInvertX.Text = "InvX";
             cbInvertX.UseVisualStyleBackColor = true;
             cbInvertX.CheckedChanged += cbInvertX_CheckedChanged;
             // 
@@ -957,7 +970,7 @@
             // 
             btnDepanelizePreview.Location = new Point(159, 139);
             btnDepanelizePreview.Name = "btnDepanelizePreview";
-            btnDepanelizePreview.Size = new Size(250, 23);
+            btnDepanelizePreview.Size = new Size(227, 23);
             btnDepanelizePreview.TabIndex = 10;
             btnDepanelizePreview.Text = "Превью депанелизации/отверждения";
             btnDepanelizePreview.UseVisualStyleBackColor = true;
@@ -1251,5 +1264,6 @@
         private RadioButton rbCureSilkscreenBottom;
         private TrackBar tbSpindleSpeed;
         private RadioButton rbCalCamOffset2;
+        private CheckBox cbCastellate;
     }
 }

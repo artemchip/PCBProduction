@@ -65,8 +65,8 @@ namespace PCBProduction3
             machineIP = "";
             GerberFolderParser.LoadLayers(gerberFilesDir);
             ProcessDrills(GerberFolderParser.gbrDrillFile, GerberFolderParser.gbrProfileFile);
-            ProcessIndividualCutouts(GerberFolderParser.gbrProfileFile, false, false);
-            ProcessSilkscreen(GerberFolderParser.gbrProfileFile, false, false);
+            ProcessIndividualCutouts(GerberFolderParser.gbrProfileFile, false, false, false);
+            ProcessSilkscreen(GerberFolderParser.gbrProfileFile, false, false, false);
         }
 
         private void ProcessDrills(String inputFile, String profileFile)
@@ -156,7 +156,7 @@ namespace PCBProduction3
             gerberVS.UnloadAllLayers(proj);
         }
 
-        public void ProcessIndividualCutouts(String profileFile, bool invertX, bool invertY)
+        public void ProcessIndividualCutouts(String profileFile, bool invertX, bool invertY, bool castellate)
         {
             // Start
             GerberProject proj = gerberVS.CreateNewProject();
@@ -259,7 +259,8 @@ namespace PCBProduction3
                 PointF centerPoint = new PointF(contourSizes[i].Left + (contourSizes[i].Width / 2.0f), contourSizes[i].Top + (contourSizes[i].Height / 2.0f));
                 float scaleFactorX = 0.0f;
                 float scaleFactorY = 0.0f;
-                float delta = (maxContourIndex == i) ? MainForm.cuttingToolDiameterMm : -MainForm.cuttingToolDiameterMm;
+                float castellateDeltaMm = (castellate) ? -1.0f : 0.0f;
+                float delta = (maxContourIndex == i) ? ((castellateDeltaMm * 2.0f) + MainForm.cuttingToolDiameterMm) : -MainForm.cuttingToolDiameterMm;
                 scaleFactorX = (contourSizes[i].Width + delta) / contourSizes[i].Width;
                 scaleFactorY = (contourSizes[i].Height + delta) / contourSizes[i].Height;
                 if (scaleFactorX < 0.5f && scaleFactorY < 0.5f)
@@ -331,7 +332,7 @@ namespace PCBProduction3
             }
         }
 
-        public void ProcessSilkscreen(String profileFile, bool invertX, bool invertY)
+        public void ProcessSilkscreen(String profileFile, bool invertX, bool invertY, bool castellate)
         {
             // TODO fill contoursSilkscren from gerber files, do not let it cover copper pad
             contoursToCureSilkscreenTop.Clear();
