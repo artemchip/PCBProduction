@@ -326,7 +326,7 @@ namespace PCBProduction3
         {
             List<PointF[]> inTemp = new List<PointF[]>();
             List<PointF[]> output = new List<PointF[]>();
-            inTemp.AddRange(contours.Where((e) => e.Count() >= 2));
+            inTemp.AddRange(contours.Where((e) => e.Count() >= 2).DistinctBy((e) => e.First().X.ToString("0.0") + "_" + e.First().Y.ToString("0.0")));
             while (inTemp.Count > 0)
             {
                 int closestIndex = 0;

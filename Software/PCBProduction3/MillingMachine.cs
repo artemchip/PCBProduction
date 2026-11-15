@@ -1,4 +1,9 @@
-﻿using GerberVS;
+﻿using Emgu.CV;
+using Emgu.CV.CvEnum;
+using Emgu.CV.Ocl;
+using Emgu.CV.Structure;
+using Emgu.CV.Util;
+using GerberVS;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +11,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using static Emgu.CV.DISOpticalFlow;
+using static Emgu.Util.Platform;
 
 namespace PCBProduction3
 {
@@ -54,8 +60,8 @@ namespace PCBProduction3
         private float secondPanelY = 21.0f;
 
         // Мои константы - лазер
-        private float laserRateMmPerMin = 750.0f;
-        private int laserPower = 1000;
+        private float laserRateMmPerMin = 1000.0f;
+        private int laserPower = 500;
 
         public MillingMachine(String gerberFilesDir, String configFilePath, int xCamerasNeeded, int xPreviewBoxWidth, int xPreviewBoxHeight, EventHandler xStateChanged, EventHandler<ErrorEventArgs> xErrorOccurred, EventHandler<NewCameraPreviewImageArgs> xNewCameraPreviewImage, EventHandler<UserInputRequiredArgs> xUserInputRequired) : base(configFilePath, xCamerasNeeded, xPreviewBoxWidth, xPreviewBoxHeight, xStateChanged, xErrorOccurred, xNewCameraPreviewImage, xUserInputRequired)
         {
@@ -332,14 +338,113 @@ namespace PCBProduction3
             }
         }
 
+        private List<PointF[]> ProcessSilkscreenLayer(Bitmap bmp, int rDPI)
+        {
+            // Vectorize it
+            float pixelsPerMm = (((float)rDPI) / 25.4f);
+            Mat binary = new Mat();
+            Mat grey = new Mat();
+            CvInvoke.CvtColor(bmp.ToMat(), grey, ColorConversion.Rgb2Gray);
+            CvInvoke.Threshold(grey, binary, 85, 255, ThresholdType.Binary);
+            VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+            Mat hier = new Mat();
+            CvInvoke.FindContours(binary, contours, hier, RetrType.Tree, ChainApproxMethod.ChainApproxSimple);
+            List<PointF[]> contoursTmp = new List<PointF[]>();
+            for (int i = 1; i < contours.Size; i++)
+            {
+                // Размер
+                double perimeter = CvInvoke.ArcLength(contours[i], true);
+                if (perimeter < 5f || perimeter > (rDPI * 2f))
+                {
+                    continue;
+                }
+
+                // Центр
+                var moments = CvInvoke.Moments(contours[i]);
+                float xMm = (int)(moments.M10 / moments.M00 / pixelsPerMm);
+                float yMm = (int)(moments.M01 / moments.M00 / pixelsPerMm);
+                if (xMm < (MainForm.holderHolesIndentMm + MainForm.spaceOuterMm) || yMm < (MainForm.holderHolesIndentMm + MainForm.spaceOuterMm))
+                {
+                    continue;
+                }
+                if (xMm > (MainForm.holderHolesIndentMm + MainForm.spaceOuterMm + MainForm.workImagePhysWidthMm) || yMm > (MainForm.holderHolesIndentMm + MainForm.spaceOuterMm + MainForm.workImagePhysHeightMm))
+                {
+                    continue;
+                }
+
+                // Это прямоугольник? Считаем угол.
+                VectorOfPoint approx = new VectorOfPoint();
+                CvInvoke.ApproxPolyDP(contours[i], approx, rDPI * 0.01f, false);
+                if (approx.Size > 1 && approx.Size < 10)
+                {
+                    // Draw
+                    List<PointF> thisContour = new List<PointF>();
+                    for (int j = 0; j < approx.Size; j++)
+                    {
+                        thisContour.Add(new PointF(((float)approx[j].X) / pixelsPerMm, ((float)approx[j].Y) / pixelsPerMm));
+                    }
+
+                    // Add contour
+                    contoursTmp.Add(thisContour.ToArray());
+                }
+            }
+            return Utils.SortContours(contoursTmp);
+        }
+
         public void ProcessSilkscreen(String profileFile, bool invertX, bool invertY, bool castellate)
         {
-            // TODO fill contoursSilkscren from gerber files, do not let it cover copper pad
+            // Start
             contoursToCureSilkscreenTop.Clear();
-            contoursToCureSilkscreenBottom.Clear();
+            contoursToCureSilkscreenBottom.Clear();            
+
+            // Generate silkscreen image
+            int rDPI = 600;
+            Bitmap? bitmapTop = null;
+            Bitmap? bitmapBottom = null;
+            try
+            {
+                int topLayerIdx = GerberFolderParser.loadedLayers.FindIndex(0, GerberFolderParser.loadedLayers.Count, (e) => Path.GetFileName(e.fileName).Contains("silkscreen_top") || e.fileName.EndsWith(".gto"));
+                bitmapTop = GerberFolderParser.DrawPanelFromGbrLayerFile(GerberFolderParser.loadedLayers[topLayerIdx].fileName, GerberFolderParser.gbrProfileFile, true, GerberFolderParser.loadedLayers[topLayerIdx].shouldMirror, "", rDPI);
+            }
+            catch { }
+            try
+            {
+                int bottomLayerIdx = GerberFolderParser.loadedLayers.FindIndex(0, GerberFolderParser.loadedLayers.Count, (e) => Path.GetFileName(e.fileName).Contains("silkscreen_bottom") || e.fileName.EndsWith(".gbo"));
+                bitmapBottom = GerberFolderParser.DrawPanelFromGbrLayerFile(GerberFolderParser.loadedLayers[bottomLayerIdx].fileName, GerberFolderParser.gbrProfileFile, true, GerberFolderParser.loadedLayers[bottomLayerIdx].shouldMirror, "", rDPI);
+            }
+            catch { }
+
+            // Vectorize
+            String vecErr = "";
+            try
+            {
+                contoursToCureSilkscreenTop = ProcessSilkscreenLayer(bitmapTop!, rDPI);
+                contoursToCureSilkscreenBottom = ProcessSilkscreenLayer(bitmapBottom!, rDPI);
+            } catch (Exception exc)
+            {
+                vecErr = exc.Message;
+            }
+
+            // First contour
             PointF[] rectContour = { new PointF(MainForm.spaceOuterMm + MainForm.holderHolesIndentMm, MainForm.spaceOuterMm + MainForm.holderHolesIndentMm), new PointF(MainForm.workImagePhysWidthMm + MainForm.spaceOuterMm + MainForm.holderHolesIndentMm, MainForm.spaceOuterMm + MainForm.holderHolesIndentMm), new PointF(MainForm.workImagePhysWidthMm + MainForm.spaceOuterMm + MainForm.holderHolesIndentMm, MainForm.workImagePhysHeightMm + MainForm.spaceOuterMm + MainForm.holderHolesIndentMm), new PointF(MainForm.spaceOuterMm + MainForm.holderHolesIndentMm, MainForm.workImagePhysHeightMm + MainForm.spaceOuterMm + MainForm.holderHolesIndentMm), new PointF(MainForm.spaceOuterMm + MainForm.holderHolesIndentMm, MainForm.spaceOuterMm + MainForm.holderHolesIndentMm) };
             contoursToCureSilkscreenTop.Add(rectContour);
             contoursToCureSilkscreenBottom.Add(rectContour);
+
+            // Dispose it
+            if (bitmapTop != null)
+            {
+                bitmapTop?.Dispose();
+                bitmapTop = null;
+            }
+            if (bitmapBottom != null)
+            {
+                bitmapBottom?.Dispose();
+                bitmapBottom = null;
+            }
+            if (vecErr.Length > 0)
+            {
+                throw new Exception(vecErr);
+            }
         }
 
         public List<PointF[]> SplitContour(PointF[] contour)
