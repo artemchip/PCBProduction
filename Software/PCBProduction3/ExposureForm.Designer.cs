@@ -33,6 +33,7 @@
             lblRenderDpi = new Label();
             nudRenderDpi = new RedUpDown();
             gbControls = new RedGroupBox();
+            btnSave = new RedButton();
             btnExpose = new RedButton();
             lblWhiteCount = new Label();
             tbBottomText = new RedTextBox();
@@ -44,7 +45,7 @@
             btnCloseWin = new RedButton();
             mainGroupBox = new RedGroupBox();
             imgSaveDialog = new SaveFileDialog();
-            btnSave = new RedButton();
+            btnPrint = new RedButton();
             ((System.ComponentModel.ISupportInitialize)pbPreview).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nudRenderDpi).BeginInit();
             gbControls.SuspendLayout();
@@ -66,7 +67,7 @@
             cbPositiveExposure.BackColor = Color.Black;
             cbPositiveExposure.FlatStyle = FlatStyle.Flat;
             cbPositiveExposure.ForeColor = Color.Red;
-            cbPositiveExposure.Location = new Point(5, 543);
+            cbPositiveExposure.Location = new Point(5, 516);
             cbPositiveExposure.Name = "cbPositiveExposure";
             cbPositiveExposure.Size = new Size(137, 19);
             cbPositiveExposure.TabIndex = 2;
@@ -77,7 +78,7 @@
             // lblRenderDpi
             // 
             lblRenderDpi.AutoSize = true;
-            lblRenderDpi.Location = new Point(5, 382);
+            lblRenderDpi.Location = new Point(5, 355);
             lblRenderDpi.Name = "lblRenderDpi";
             lblRenderDpi.Size = new Size(102, 15);
             lblRenderDpi.TabIndex = 7;
@@ -87,7 +88,7 @@
             // 
             nudRenderDpi.BackColor = Color.Black;
             nudRenderDpi.ForeColor = Color.Red;
-            nudRenderDpi.Location = new Point(5, 400);
+            nudRenderDpi.Location = new Point(5, 373);
             nudRenderDpi.Maximum = new decimal(new int[] { 6000, 0, 0, 0 });
             nudRenderDpi.Minimum = new decimal(new int[] { 300, 0, 0, 0 });
             nudRenderDpi.Name = "nudRenderDpi";
@@ -98,6 +99,7 @@
             // 
             // gbControls
             // 
+            gbControls.Controls.Add(btnPrint);
             gbControls.Controls.Add(btnSave);
             gbControls.Controls.Add(btnExpose);
             gbControls.Controls.Add(lblWhiteCount);
@@ -117,12 +119,25 @@
             gbControls.TabStop = false;
             gbControls.Text = "Параметры";
             // 
+            // btnSave
+            // 
+            btnSave.BackColor = Color.Black;
+            btnSave.FlatStyle = FlatStyle.Flat;
+            btnSave.ForeColor = Color.Red;
+            btnSave.Location = new Point(132, 541);
+            btnSave.Name = "btnSave";
+            btnSave.Size = new Size(130, 23);
+            btnSave.TabIndex = 22;
+            btnSave.Text = "Сохранить...";
+            btnSave.UseVisualStyleBackColor = true;
+            btnSave.Click += btnSave_Click;
+            // 
             // btnExpose
             // 
             btnExpose.BackColor = Color.Black;
             btnExpose.FlatStyle = FlatStyle.Flat;
             btnExpose.ForeColor = Color.Red;
-            btnExpose.Location = new Point(5, 569);
+            btnExpose.Location = new Point(5, 542);
             btnExpose.Name = "btnExpose";
             btnExpose.Size = new Size(121, 23);
             btnExpose.TabIndex = 21;
@@ -132,7 +147,7 @@
             // 
             // lblWhiteCount
             // 
-            lblWhiteCount.Location = new Point(6, 345);
+            lblWhiteCount.Location = new Point(5, 327);
             lblWhiteCount.Name = "lblWhiteCount";
             lblWhiteCount.Size = new Size(255, 28);
             lblWhiteCount.TabIndex = 19;
@@ -142,7 +157,7 @@
             tbBottomText.BackColor = Color.Black;
             tbBottomText.BorderStyle = BorderStyle.FixedSingle;
             tbBottomText.ForeColor = Color.Red;
-            tbBottomText.Location = new Point(5, 514);
+            tbBottomText.Location = new Point(5, 487);
             tbBottomText.Name = "tbBottomText";
             tbBottomText.Size = new Size(256, 23);
             tbBottomText.TabIndex = 13;
@@ -152,7 +167,7 @@
             // lblBotText
             // 
             lblBotText.AutoSize = true;
-            lblBotText.Location = new Point(5, 496);
+            lblBotText.Location = new Point(5, 469);
             lblBotText.Name = "lblBotText";
             lblBotText.Size = new Size(88, 15);
             lblBotText.TabIndex = 12;
@@ -161,7 +176,7 @@
             // lblTopText
             // 
             lblTopText.AutoSize = true;
-            lblTopText.Location = new Point(5, 440);
+            lblTopText.Location = new Point(5, 413);
             lblTopText.Name = "lblTopText";
             lblTopText.Size = new Size(63, 15);
             lblTopText.TabIndex = 11;
@@ -172,7 +187,7 @@
             tbTopText.BackColor = Color.Black;
             tbTopText.BorderStyle = BorderStyle.FixedSingle;
             tbTopText.ForeColor = Color.Red;
-            tbTopText.Location = new Point(5, 458);
+            tbTopText.Location = new Point(5, 431);
             tbTopText.Name = "tbTopText";
             tbTopText.Size = new Size(256, 23);
             tbTopText.TabIndex = 9;
@@ -185,9 +200,9 @@
             clbLayers.BorderStyle = BorderStyle.None;
             clbLayers.ForeColor = Color.Red;
             clbLayers.FormattingEnabled = true;
-            clbLayers.Location = new Point(6, 22);
+            clbLayers.Location = new Point(6, 18);
             clbLayers.Name = "clbLayers";
-            clbLayers.Size = new Size(256, 324);
+            clbLayers.Size = new Size(256, 306);
             clbLayers.TabIndex = 8;
             clbLayers.SelectedIndexChanged += clbLayers_SelectedIndexChanged;
             // 
@@ -227,18 +242,18 @@
             imgSaveDialog.RestoreDirectory = true;
             imgSaveDialog.Title = "Сохранить фотошаблон";
             // 
-            // btnSave
+            // btnPrint
             // 
-            btnSave.BackColor = Color.Black;
-            btnSave.FlatStyle = FlatStyle.Flat;
-            btnSave.ForeColor = Color.Red;
-            btnSave.Location = new Point(132, 568);
-            btnSave.Name = "btnSave";
-            btnSave.Size = new Size(121, 23);
-            btnSave.TabIndex = 22;
-            btnSave.Text = "Сохранить...";
-            btnSave.UseVisualStyleBackColor = true;
-            btnSave.Click += btnSave_Click;
+            btnPrint.BackColor = Color.Black;
+            btnPrint.FlatStyle = FlatStyle.Flat;
+            btnPrint.ForeColor = Color.Red;
+            btnPrint.Location = new Point(5, 571);
+            btnPrint.Name = "btnPrint";
+            btnPrint.Size = new Size(255, 23);
+            btnPrint.TabIndex = 23;
+            btnPrint.Text = "Печать...";
+            btnPrint.UseVisualStyleBackColor = true;
+            btnPrint.Click += btnPrint_Click;
             // 
             // ExposureForm
             // 
@@ -282,5 +297,6 @@
         private SaveFileDialog imgSaveDialog;
         private RedButton btnExpose;
         private RedButton btnSave;
+        private RedButton btnPrint;
     }
 }

@@ -18,7 +18,6 @@ namespace PCBProduction3
         public int copperIdx = 0;
         public int totalIdx = 0;
         public bool shouldMirror = false;
-        public Bitmap? bitmap;
 
         public ELayer(String fileName, bool isCopperOuter, bool isCopperInner, int copperIdx, int totalIdx, bool shouldMirror)
         {
@@ -28,7 +27,6 @@ namespace PCBProduction3
             this.copperIdx = copperIdx;
             this.totalIdx = totalIdx;
             this.shouldMirror = shouldMirror;
-            this.bitmap = null;
         }
     }
 

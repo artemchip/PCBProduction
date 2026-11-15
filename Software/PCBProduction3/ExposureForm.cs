@@ -1,6 +1,7 @@
 ﻿using DirectShowLib;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using Emgu.CV.Reg;
 using Emgu.CV.Structure;
 using GerberVS;
 using Newtonsoft.Json;
@@ -226,6 +227,112 @@ namespace PCBProduction3
             if (imgSaveDialog.ShowDialog() == DialogResult.OK)
             {
                 pbPreview.Image?.Save(imgSaveDialog.FileName);
+            }
+        }
+
+        private void btnPrint_Click(object sender, EventArgs e)
+        {
+            if (GerberFolderParser.loadedLayers.Count < 1)
+            {
+                MessageBox.Show(this, "Слои не загружены.");
+                return;
+            }
+            if (clbLayers.CheckedIndices.Count < 1)
+            {
+                MessageBox.Show(this, "Ничего не выбрано для печати.");
+                return;
+            }
+            PrintDocument pd = new PrintDocument();
+            pd.PrintPage += Pd_PrintFilmPage;
+            PrintDialog pdi = new PrintDialog();
+            pdi.Document = pd;
+            if (pdi.ShowDialog() == DialogResult.OK)
+            {
+                pd.Print();
+            }
+        }
+
+        private void Pd_PrintFilmPage(object sender, PrintPageEventArgs e)
+        {
+            e.HasMorePages = false;
+
+            // Предобработка Bitmapов и поворот так чтобы ширина была больше высоты
+            List<Bitmap> bitmapsToRender = new List<Bitmap>();
+            Bitmap? totalGridImage = null;
+            try
+            {
+                int idx = 0;
+                foreach (ELayer el in GerberFolderParser.loadedLayers)
+                {
+                    if (clbLayers.CheckedIndices.Contains(idx))
+                    {
+                        Bitmap bmpCopy = GerberFolderParser.DrawPanelFromGbrLayerFile(el.fileName, GerberFolderParser.gbrProfileFile, isPhotoresistPositive, !el.shouldMirror, (el.shouldMirror) ? bottomText : topText, renderDpi);
+                        bmpCopy.SetResolution(1f, 1f);
+                        if (bmpCopy.Width < bmpCopy.Height)
+                        {
+                            bmpCopy.RotateFlip(RotateFlipType.Rotate90FlipNone);
+                        }
+                        bitmapsToRender.Add(bmpCopy);
+                    }
+                    idx++;
+                }
+
+                // Stack
+                int widthLimitPx = (int)Math.Floor((((float)Math.Max(e.PageBounds.Width, e.PageBounds.Height)) / 100.0f) * renderDpi);
+                int firstBmpWidthPx = 1;
+                int firstBmpHeightPx = 1;
+                try
+                {
+                    firstBmpWidthPx = bitmapsToRender.First().Width;
+                    firstBmpHeightPx = bitmapsToRender.First().Height;
+                }
+                catch { }
+                int colCount = (int)Math.Floor((float)widthLimitPx / (float)firstBmpWidthPx);
+                int rowCount = (int)Math.Ceiling((float)bitmapsToRender.Count / (float)colCount);
+                if (colCount > bitmapsToRender.Count)
+                {
+                    colCount = bitmapsToRender.Count;
+                }
+                int gIdx = 0;
+                totalGridImage = new Bitmap(colCount * firstBmpWidthPx, rowCount * firstBmpHeightPx);
+                totalGridImage.SetResolution(1f, 1f);
+                using (Graphics g = Graphics.FromImage(totalGridImage))
+                {
+                    for (int x = 0; x < colCount; x++)
+                    {
+                        for (int y = 0; y < rowCount; y++)
+                        {
+                            g.DrawImage(bitmapsToRender[gIdx], new Point(x * firstBmpWidthPx, y * firstBmpHeightPx));
+                            gIdx++;
+                        }
+                    }
+                }
+
+                // Рендер общей картинки на страницу
+                bool isMaskWide = totalGridImage.Width > totalGridImage.Height;
+                bool isPaperWide = e.PageBounds.Width > e.PageBounds.Height;
+                if (isMaskWide != isPaperWide)
+                {
+                    totalGridImage.RotateFlip(RotateFlipType.Rotate90FlipNone);
+                }
+                float widthU = totalGridImage.Width * 100.0f / renderDpi;
+                float heightU = totalGridImage.Height * 100.0f / renderDpi;
+                float left = e.PageBounds.Left + (e.PageBounds.Width / 2.0f) - (widthU / 2.0f);
+                float top = e.PageBounds.Top + (e.PageBounds.Height / 2.0f) - (heightU / 2.0f);
+                if (left < e.PageBounds.Left) left = e.PageBounds.Left;
+                if (top < e.PageBounds.Top) top = e.PageBounds.Top;
+                e.Graphics?.DrawImage(totalGridImage, left, top, widthU, heightU);
+            } catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            } finally
+            {
+                // Освободить ресурсы
+                for (int i = 0; i < bitmapsToRender.Count; i++)
+                {
+                    bitmapsToRender[i].Dispose();
+                }
+                totalGridImage?.Dispose();
             }
         }
     }
