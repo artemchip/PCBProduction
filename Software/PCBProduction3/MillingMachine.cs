@@ -52,7 +52,7 @@ namespace PCBProduction3
         // Мои константы
         private float cuttingToolDiameterMm = 1.5f;
         private float toolChangeZMm = 38.0f;
-        private float probeZMm = 18.0f;
+        private float probeZMm = 17.0f;
         private float epDepthMm = 3.5f;
         private float firstPanelX = 18.0f;
         private float firstPanelY = 21.0f;
@@ -338,8 +338,14 @@ namespace PCBProduction3
             }
         }
 
-        private List<PointF[]> ProcessSilkscreenLayer(Bitmap bmp, int rDPI)
+        private List<PointF[]> ProcessSilkscreenLayer(Bitmap? bmp, int rDPI)
         {
+            // Null
+            if (bmp == null)
+            {
+                return new List<PointF[]>();
+            }
+
             // Vectorize it
             float pixelsPerMm = (((float)rDPI) / 25.4f);
             Mat binary = new Mat();

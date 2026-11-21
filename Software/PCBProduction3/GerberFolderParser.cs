@@ -545,7 +545,9 @@ namespace PCBProduction3
                     paddedBmp.SetResolution(layerImg.HorizontalResolution, layerImg.VerticalResolution);
                     using (Graphics gp = Graphics.FromImage(paddedBmp))
                     {
-                        gp.Clear(Color.Black);
+                        gp.Clear((shouldInvert) ? Color.Black : Color.White);
+                        int halfGapBetweenPCBsPx = (int)(gapBetweenPCBsPx * 0.75f);
+                        gp.FillRectangle((shouldInvert) ? Brushes.White : Brushes.Black, new Rectangle(halfGapBetweenPCBsPx, halfGapBetweenPCBsPx, paddedBmp.Width - (halfGapBetweenPCBsPx * 2), paddedBmp.Height - (halfGapBetweenPCBsPx * 2)));
                         gp.DrawImage(layerImg, new Point(gapBetweenPCBsPx, gapBetweenPCBsPx));
                     }
                     using (Bitmap tfBmp = (shouldInvert) ? Utils.TransformInvert(paddedBmp) : paddedBmp)
@@ -571,7 +573,7 @@ namespace PCBProduction3
                             }
                             using (Graphics gt = Graphics.FromImage(totalBmp))
                             {
-                                gt.Clear((shouldInvert) ? Color.White : Color.Black);
+                                gt.Clear((shouldInvert) ? Color.Black : Color.White);
                                 int possibleCols = (int)Math.Ceiling((double)oriWorkImageWidth / (double)tfBmp.Width);
                                 int possibleRows = (int)Math.Ceiling((double)oriWorkImageHeight / (double)tfBmp.Height);
                                 if ((possibleCols < 2 || possibleRows < 2) && (inputFile != STOUFFER_FILE))
@@ -599,7 +601,7 @@ namespace PCBProduction3
                             float holderHoleRectBottomMm = workImagePhysicalSizeInMm.Height + MainForm.spaceOuterMm + (MainForm.holderHolesIndentMm * 2f);
                             using (Graphics xg = Graphics.FromImage(xTotalBmp))
                             {
-                                xg.Clear((shouldInvert) ? Color.White : Color.Black);
+                                xg.Clear((shouldInvert) ? Color.Black : Color.White);
                                 List<PointF> anchorHolesToDraw = new List<PointF>();
                                 anchorHolesToDraw.Add(new PointF(Utils.Lerp(holderHoleRectLeftMm, holderHoleRectRightMm, 0.0f), Utils.Lerp(holderHoleRectTopMm, holderHoleRectBottomMm, 0.0f)));
                                 anchorHolesToDraw.Add(new PointF(Utils.Lerp(holderHoleRectLeftMm, holderHoleRectRightMm, 0.0f), Utils.Lerp(holderHoleRectTopMm, holderHoleRectBottomMm, 0.25f)));
